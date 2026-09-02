@@ -1,0 +1,106 @@
+# deploy/nginx.conf.example
+#
+# Referencia operativa (NO se aplica automáticamente) para servir LaWho detrás
+# de Nginx en producción:
+#   - reverse proxy hacia el servidor Node de Astro (`@astrojs/node` standalone)
+#   - entrega estática de `/uploads/**` directamente desde disco (bypass a Node)
+#   - encabezados TLS-ready y de seguridad
+#
+# Ajustar los placeholders antes de usar:
+#   - DOMINIO_PRINCIPAL   -> dominio principal (p. ej. lawho.org.ar)
+#   - DOMINIO_AUTH        -> subdominio del escritor (p. ej. auth.lawho.org.ar)
+#   - PUERTO_NODE         -> puerto del servidor Node (por defecto 4321)
+#   - RUTA_UPLOADS        -> ruta absoluta de UPLOADS_DIR (p. ej. /srv/lawho/uploads)
+
+# El servidor Astro standalone escucha por defecto en 127.0.0.1:4321.
+# Ajustar el puerto si el proceso Node usa otro valor (env PORT/HOST).
+upstream lawho_node {
+    server 127.0.0.1:PUERTO_NODE;
+    keepalive 32;
+}
+
+# ---------------------------------------------------------------------------
+# Sitio principal: landing estática + blog on-demand (/operativos-de-salud/**)
+# ---------------------------------------------------------------------------
+server {
+    listen 80;
+    server_name DOMINIO_PRINCIPAL www.DOMINIO_PRINCIPAL;
+
+    # (Producción con TLS) Redirigir HTTP -> HTTPS. Descomentar cuando el
+    # certificado esté disponible (certbot/Let's Encrypt).
+    # return 301 https://$host$request_uri;
+
+    # Entrega estática de imágenes subidas: se sirven directo desde disco y
+    # nunca llegan al proceso Node. La ruta debe coincidir con UPLOADS_DIR.
+    location /uploads/ {
+        alias RUTA_UPLOADS/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    # Todo lo demás (landing estática + rutas on-demand) va al servidor Node.
+    location / {
+        proxy_pass http://lawho_node;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Subdominio del escritor: /escritor/** (login + publicación de notas)
+# ---------------------------------------------------------------------------
+server {
+    listen 80;
+    server_name DOMINIO_AUTH;
+
+    # (Producción con TLS) Redirigir HTTP -> HTTPS.
+    # return 301 https://$host$request_uri;
+
+    # El área de escritura publica imágenes con la misma ruta /uploads/**.
+    location /uploads/ {
+        alias RUTA_UPLOADS/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    location / {
+        proxy_pass http://lawho_node;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+}
+
+# ---------------------------------------------------------------------------
+# (Producción con TLS) Bloque de referencia para HTTPS — certificado vía
+# certbot/Let's Encrypt. El proxy recibe TLS y reenvía en claro a Node local.
+# ---------------------------------------------------------------------------
+# server {
+#     listen 443 ssl http2;
+#     server_name DOMINIO_PRINCIPAL www.DOMINIO_PRINCIPAL DOMINIO_AUTH;
+#
+#     ssl_certificate     /etc/letsencrypt/live/DOMINIO_PRINCIPAL/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/DOMINIO_PRINCIPAL/privkey.pem;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#
+#     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+#     add_header X-Content-Type-Options "nosniff" always;
+#     add_header X-Frame-Options "SAMEORIGIN" always;
+#     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+#     add_header X-Forwarded-Proto "https";
+#
+#     # ... mismas location /uploads/ y location / que arriba ...
+# }
