@@ -64,3 +64,8 @@ Para las variables utiliza nombre en ingles, pero para mensajes de usuario siemp
 
 ## Al terminar cualquier tarea
 - Ejecuta los tests y confirma en tu respuesta que todo pasa. 
+
+## Entrega (workflow de ramas)
+- Todos los cambios implementados se pushean PRIMERO a la rama `dev` (rama de integración/estaging).
+- `main` solo se toca después de que el maintainer confirme explícitamente que `dev` está estable.
+- Nunca pushear directo a `main` sin esa confirmación. 
