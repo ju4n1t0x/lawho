@@ -1,0 +1,59 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Astro 7.2.10 (standard library only), TypeScript strict, pnpm, Node >=22.12.0
+  Architecture: Landing page (NavBar, Historia, Infancias, Terreno, Sumate, Dona, Footer)
+    + internal blog /operativos-de-salud (content collections: index + [slug] detail, es + en mirrors)
+    + authenticated subdomain for post writing (server islands, auth)
+  Testing: vitest ^4.1.11 installed; `pnpm test` -> `vitest run`; unit tests: src/lib/anim.test.ts, src/lib/notes.test.ts. No e2e (playwright/cypress) or jest.
+  Style: TailwindCSS v4 (installed, `@import "tailwindcss"` in global.css). Variables in English, user messages in Spanish, content in Spanish+English via i18n.
+  Persistence: PostgreSQL (external service, env vars), filesystem + Nginx for images, Docker on VPS (DB outside docker-compose).
+  Governance: docs/constitution.md — 6 rules (minimal stack, spec-before-code, layer separation, tests obligatory, external persistence, language rules).
+
+projects:
+  - path: "."
+    stack: "Astro 7.2.10 / TypeScript / pnpm"
+    test_command: "vitest run"
+    test_layers:
+      unit: { available: true, tool: "vitest" }
+      integration: { available: false, tool: "—" }
+      e2e: { available: false, tool: "—" }
+    coverage: { available: false, command: "—" }
+    quality:
+      linter: { available: false, command: "—" }
+      type_checker: { available: false, command: "—" }
+      formatter: { available: false, command: "—" }
+
+strict_tdd: false
+strict_tdd_reason: "vitest ^4.1.11 is installed and `pnpm test` runs; strict_tdd remains disabled (standard workflow selected for this change)."
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Reference constitution.md constraints
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Language: variables in English, user-facing messages in Spanish, content in Spanish+English via i18n
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Respect layer separation: pages/layouts/components/content collections/server islands
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Only add dependencies that are explicitly permitted by constitution
+  apply:
+    guidelines:
+      - Follow existing code patterns
+      - Astro 7.2 standard library ONLY — no additional frameworks without constitution approval
+      - Variables in English, user messages in Spanish
+      - Environment variables MUST be declared in astro.config.mjs `env.schema` and imported only from `astro:env/client` or `astro:env/server`; `process.env` and `import.meta.env` are FORBIDDEN
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "astro build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
