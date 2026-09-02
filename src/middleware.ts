@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
+import { SESSION_TTL_MS } from "astro:env/server";
 import { SESSION_COOKIE_NAME } from "./lib/session";
-import { getActiveSession } from "./lib/session-repo";
+import { getActiveSessionAndTouch } from "./lib/session-repo";
 
 /**
  * Populate `Astro.locals.user` from the session cookie for the writer routes,
@@ -21,7 +22,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const token = context.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (token) {
-    const session = await getActiveSession(token);
+    const session = await getActiveSessionAndTouch(token, SESSION_TTL_MS);
     if (session) {
       context.locals.user = {
         id: session.userId,

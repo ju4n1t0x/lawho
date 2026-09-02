@@ -1,6 +1,7 @@
 ---
+import { SESSION_TTL_MS } from "astro:env/server";
 import { SESSION_COOKIE_NAME } from "../../lib/session";
-import { getActiveSession } from "../../lib/session-repo";
+import { getActiveSessionAndTouch } from "../../lib/session-repo";
 
 interface Props {
   error?: string;
@@ -10,9 +11,10 @@ const { error } = Astro.props;
 
 // Server islands run in an isolated request context, so the page middleware
 // does not apply here. Re-check the session cookie in-island to decide
-// whether to show the login form or the authenticated state.
+// whether to show the login form or the authenticated state. A valid session
+// is also touched so its sliding TTL is renewed by this activity.
 const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
-const session = token ? await getActiveSession(token) : null;
+const session = token ? await getActiveSessionAndTouch(token, SESSION_TTL_MS) : null;
 const isAuthenticated = !!session;
 ---
 
