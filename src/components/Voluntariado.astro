@@ -1,0 +1,42 @@
+---
+import Reveal from "./Reveal.astro";
+
+const EMAIL_URL = "mailto:elimacedo1806@gmail.com";
+---
+
+<section id="voluntariado" class="px-4 pb-28">
+  <Reveal>
+    <div class="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
+      <div class="lift rounded-[2.5rem] border border-border bg-card p-10">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">
+          ¿Sos profesional de la salud?
+        </h2>
+        <p class="mt-4 text-sm leading-relaxed text-muted-foreground">
+          Convocamos médicos especialistas, odontólogos y enfermeros con título habilitante, seguro
+          personal y de mala praxis vigentes, avalados ante el Ministerio de Salud de Salta.
+        </p>
+        <a
+          href={EMAIL_URL}
+          class="mt-8 inline-block rounded-full bg-foreground px-7 py-3.5 text-sm font-bold text-background transition-transform hover:scale-105"
+        >
+          Sumate al equipo
+        </a>
+      </div>
+      <div class="lift rounded-[2.5rem] bg-sun p-10 text-sun-foreground">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">
+          ¿Querés ayudar de otra forma?
+        </h2>
+        <p class="mt-4 text-sm leading-relaxed opacity-80">
+          Logística, transporte, cocina, clasificación de insumos, medicación donada por laboratorios
+          o alianzas institucionales: todo suma para volver más seguido.
+        </p>
+        <a
+          href={EMAIL_URL}
+          class="mt-8 inline-block rounded-full bg-sun-foreground px-7 py-3.5 text-sm font-bold text-background transition-transform hover:scale-105"
+        >
+          Escribinos
+        </a>
+      </div>
+    </div>
+  </Reveal>
+</section>

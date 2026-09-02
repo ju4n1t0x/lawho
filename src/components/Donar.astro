@@ -1,0 +1,64 @@
+---
+import Reveal from "./Reveal.astro";
+import heroManos from "../assets/hero-manos.jpg";
+
+const EMAIL_URL = "mailto:elimacedo1806@gmail.com";
+
+const aportes = [
+  { monto: "Medicación", texto: "Donada por laboratorios y entregada a los puestos sanitarios" },
+  { monto: "Logística", texto: "Combustible y traslado del equipo y el equipamiento a Salta" },
+  { monto: "Equipamiento", texto: "Ecógrafos, reactivos e insumos para el trabajo en terreno" },
+];
+---
+
+<section id="donar" class="px-4 pb-24">
+  <div class="relative mx-auto max-w-6xl overflow-hidden rounded-[3rem]">
+    <img
+      src={heroManos.src}
+      alt="Médica voluntaria tomando la mano de una paciente durante una jornada sanitaria"
+      loading="lazy"
+      width={1600}
+      height={1000}
+      class="absolute inset-0 size-full object-cover"
+    />
+    <div
+      class="absolute inset-0 bg-gradient-to-r from-foreground/92 via-foreground/80 to-foreground/40"
+    ></div>
+    <div class="relative grid gap-12 p-10 text-background md:p-16 lg:grid-cols-[1fr_1fr]">
+      <Reveal>
+        <span class="text-xs font-bold uppercase tracking-[0.25em] text-sun">
+          Tu aporte viaja con nosotros
+        </span>
+        <h2
+          class="mt-5 text-balance font-display text-4xl font-semibold leading-tight md:text-5xl"
+        >
+          El operativo se financia a pulmón. Sostenerlo depende de todos.
+        </h2>
+        <p class="mt-6 max-w-[48ch] text-pretty leading-relaxed text-background/80">
+          Los viajes se costean con aportes del propio equipo médico y voluntario, de sus familias y
+          de colaboradores. Cada aporte se transforma en medicación, combustible y horas de atención
+          donde el sistema de salud casi no llega.
+        </p>
+      </Reveal>
+
+      <Reveal delay={140}>
+        <div class="space-y-4">
+          {aportes.map((a) => (
+            <div
+              class="flex items-center gap-5 rounded-2xl bg-background/10 p-5 backdrop-blur-sm transition-colors hover:bg-background/20"
+            >
+              <span class="font-display text-2xl font-semibold text-sun">{a.monto}</span>
+              <span class="text-sm text-background/85">{a.texto}</span>
+            </div>
+          ))}
+          <a
+            href={EMAIL_URL}
+            class="block rounded-full bg-accent py-5 text-center font-bold text-accent-foreground transition-transform hover:scale-[1.03]"
+          >
+            Quiero colaborar
+          </a>
+        </div>
+      </Reveal>
+    </div>
+  </div>
+</section>

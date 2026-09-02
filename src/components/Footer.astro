@@ -1,0 +1,35 @@
+---
+const INSTAGRAM_URL = "https://www.instagram.com/lawho_medicos_voluntarios/";
+const EMAIL_URL = "mailto:elimacedo1806@gmail.com";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-border px-4 py-14">
+  <div class="mx-auto flex max-w-6xl flex-col items-center gap-6 text-center">
+    <span class="flex flex-col items-center leading-none">
+      <span class="font-display text-2xl font-extrabold tracking-tight">LAWHO</span>
+      <span class="mt-1 text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
+        Fundación sanitaria
+      </span>
+    </span>
+    <p class="max-w-[46ch] text-sm text-muted-foreground">
+      LAWHO Asociación Civil &mdash; operativos de salud en el Chaco Salteño, Departamento Rivadavia
+      Banda Norte, Salta. Contacto: Dra. Elizabeth Macedo, 351-744-2040.
+    </p>
+    <div class="flex gap-6 text-sm">
+      <a
+        href={INSTAGRAM_URL}
+        target="_blank"
+        rel="noreferrer"
+        class="transition-colors hover:text-accent"
+      >
+        Instagram
+      </a>
+      <a href={EMAIL_URL} class="transition-colors hover:text-accent">elimacedo1806@gmail.com</a>
+    </div>
+    <p class="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/60">
+      &copy; {year} LAWHO Asociación Civil
+    </p>
+  </div>
+</footer>
