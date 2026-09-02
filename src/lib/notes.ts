@@ -1,20 +1,31 @@
-import type { CollectionEntry } from "astro:content";
+import type { NoteData } from "./notes-mapper";
 
 export interface GetPublishedNotesOptions {
   featuredOnly?: boolean;
 }
 
 /**
+ * A live `notes` entry as returned by `getLiveCollection("notes")` /
+ * `getLiveEntry("notes", ...)`. `data.image` is a string URL (see `NoteData`),
+ * not the build-time `image()` helper.
+ */
+export interface LiveNoteEntry {
+  id: string;
+  data: NoteData;
+  rendered?: { html: string };
+}
+
+/**
  * Filter a notes collection to published entries and sort newest first.
  *
  * Excludes drafts (`draft === true`), optionally restricts the result to
- * featured notes, and sorts by `date` in descending order. The collection
- * entries already carry a `slug`, which callers use to build detail URLs.
+ * featured notes, and sorts by `date` in descending order. Entry `id` is the
+ * slug, which callers use to build detail URLs.
  */
 export function getPublishedNotes(
-  entries: CollectionEntry<"notes">[],
+  entries: LiveNoteEntry[],
   options: GetPublishedNotesOptions = {},
-): CollectionEntry<"notes">[] {
+): LiveNoteEntry[] {
   const { featuredOnly = false } = options;
 
   return entries

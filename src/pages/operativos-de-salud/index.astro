@@ -1,10 +1,13 @@
 ---
-import { getCollection } from "astro:content";
+import { getLiveCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import NoteCard from "../../components/NoteCard.astro";
 import { getPublishedNotes } from "../../lib/notes";
 
-const notes = getPublishedNotes(await getCollection("notes"));
+export const prerender = false;
+
+const result = await getLiveCollection("notes");
+const notes = getPublishedNotes(result.entries ?? []);
 ---
 
 <BaseLayout>

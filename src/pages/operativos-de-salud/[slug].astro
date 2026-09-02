@@ -1,19 +1,19 @@
 ---
-import { getCollection, render } from "astro:content";
+import { getLiveEntry, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import NoteTemplate from "../../components/NoteTemplate.astro";
 
-export async function getStaticPaths() {
-  const notes = await getCollection("notes");
-  return notes
-    .filter((note) => note.data.draft !== true)
-    .map((note) => ({ params: { slug: note.id }, props: { note } }));
-}
+export const prerender = false;
 
-const { note } = Astro.props;
-const { Content } = await render(note);
+const { slug } = Astro.params;
+const result = await getLiveEntry("notes", slug ?? "");
+const entry = result.entry;
+if (!entry) {
+  return new Response(null, { status: 404 });
+}
+const { Content } = await render(entry);
 ---
 
 <BaseLayout>
-  <NoteTemplate note={note} Content={Content} />
+  <NoteTemplate note={entry} Content={Content} />
 </BaseLayout>
