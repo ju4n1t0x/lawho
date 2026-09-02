@@ -1,0 +1,25 @@
+---
+const cinta = [
+  "Wichí",
+  "Chorote",
+  "Chulupí",
+  "Toba",
+  "Criollos",
+  "Santa Victoria Este",
+  "La Merced",
+  "Alto La Sierra",
+];
+
+const track = [...cinta, ...cinta];
+---
+
+<section class="overflow-hidden border-y border-border bg-card py-5">
+  <div class="flex w-max animate-marquee gap-10 pr-10">
+    {track.map((pueblo) => (
+      <span class="flex items-center gap-10 font-display text-2xl font-medium text-muted-foreground">
+        {pueblo}
+        <span class="size-2 rounded-full bg-accent/60"></span>
+      </span>
+    ))}
+  </div>
+</section>
