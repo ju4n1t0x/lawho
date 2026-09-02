@@ -13,8 +13,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/node": "^11.1.5",
     "@tailwindcss/vite": "^4.3.3",
+    "argon2": "^0.45.1",
     "astro": "^7.2.10",
+    "pg": "^8.23.0",
     "tailwindcss": "^4.3.3"
   },
   "allowScripts": {
