@@ -1,0 +1,70 @@
+---
+import { easeOutCubic, formatEsAr } from "../lib/anim";
+
+interface Props {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  duration?: number;
+}
+
+const { value, prefix = "", suffix = "", duration = 1600 } = Astro.props;
+---
+
+<span data-countup data-value={value} data-prefix={prefix} data-suffix={suffix} data-duration={duration}>
+  {prefix}{formatEsAr(0)}{suffix}
+</span>
+
+<script>
+  import { easeOutCubic, formatEsAr } from "../lib/anim";
+
+  (() => {
+    const KEY = "__lawhoCountUp";
+    const g = window as unknown as Record<string, unknown>;
+    if (g[KEY]) return;
+    g[KEY] = true;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const els = document.querySelectorAll<HTMLElement>("[data-countup]");
+
+    els.forEach((el) => {
+      const target = Number(el.dataset.value);
+      const prefix = el.dataset.prefix ?? "";
+      const suffix = el.dataset.suffix ?? "";
+      const duration = Number(el.dataset.duration ?? 1600);
+
+      const render = (n: number) => {
+        el.textContent = `${prefix}${formatEsAr(n)}${suffix}`;
+      };
+
+      if (prefersReducedMotion) {
+        render(target);
+        return;
+      }
+
+      if (typeof IntersectionObserver === "undefined") {
+        render(target);
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+            const start = performance.now();
+            const tick = (now: number) => {
+              const progress = Math.min((now - start) / duration, 1);
+              render(Math.round(target * easeOutCubic(progress)));
+              if (progress < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          });
+        },
+        { threshold: 0.4 },
+      );
+
+      observer.observe(el);
+    });
+  })();
+</script>
