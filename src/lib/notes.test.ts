@@ -1,38 +1,24 @@
 import { describe, expect, it } from "vitest";
-import type { CollectionEntry } from "astro:content";
+import type { NoteData } from "./notes-mapper";
 
-import { formatNoteDate, getPublishedNotes } from "./notes";
-
-interface NoteData {
-  title: string;
-  subtitle: string;
-  image: { src: string; width: number; height: number; format: string };
-  date: Date;
-  draft: boolean;
-  featured: boolean;
-  author?: string;
-  tag?: string;
-}
+import { formatNoteDate, getPublishedNotes, type LiveNoteEntry } from "./notes";
 
 function makeNote(
   slug: string,
   data: Omit<NoteData, "title" | "subtitle" | "image"> &
     Partial<Pick<NoteData, "title" | "subtitle" | "image" | "draft" | "featured">>,
-): CollectionEntry<"notes"> {
+): LiveNoteEntry {
   return {
     id: slug,
-    slug,
-    collection: "notes",
-    body: "",
     data: {
       title: "Título de ejemplo",
       subtitle: "Subtítulo de ejemplo",
-      image: { src: "/img.jpg", width: 600, height: 750, format: "jpg" },
+      image: "/uploads/notes/ejemplo/foto.jpg",
       draft: false,
       featured: true,
       ...data,
     },
-  } as CollectionEntry<"notes">;
+  };
 }
 
 describe("getPublishedNotes", () => {
@@ -45,7 +31,7 @@ describe("getPublishedNotes", () => {
 
     const result = getPublishedNotes(notes);
 
-    expect(result.map((n) => n.slug)).toEqual(["publicada-2", "publicada-1"]);
+    expect(result.map((n) => n.id)).toEqual(["publicada-2", "publicada-1"]);
   });
 
   it("sorts published notes by date descending", () => {
@@ -56,8 +42,8 @@ describe("getPublishedNotes", () => {
 
     const result = getPublishedNotes(notes);
 
-    expect(result[0].slug).toBe("nueva");
-    expect(result[1].slug).toBe("vieja");
+    expect(result[0].id).toBe("nueva");
+    expect(result[1].id).toBe("vieja");
   });
 
   it("returns only featured notes when featuredOnly is true", () => {
@@ -68,7 +54,7 @@ describe("getPublishedNotes", () => {
 
     const result = getPublishedNotes(notes, { featuredOnly: true });
 
-    expect(result.map((n) => n.slug)).toEqual(["destacada"]);
+    expect(result.map((n) => n.id)).toEqual(["destacada"]);
   });
 
   it("returns an empty array for an empty collection", () => {
@@ -83,7 +69,7 @@ describe("getPublishedNotes", () => {
 
     const result = getPublishedNotes(notes);
 
-    expect(result.map((n) => n.slug)).toEqual(["comun", "destacada"]);
+    expect(result.map((n) => n.id)).toEqual(["comun", "destacada"]);
   });
 });
 

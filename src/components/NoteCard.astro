@@ -1,9 +1,9 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { LiveNoteEntry } from "../lib/notes";
 import Reveal from "./Reveal.astro";
 
 interface Props {
-  note: CollectionEntry<"notes">;
+  note: LiveNoteEntry;
   delay?: number;
 }
 
@@ -18,11 +18,9 @@ const { image, title, subtitle, tag } = note.data;
   >
     <div class="photo-zoom">
       <img
-        src={image.src}
+        src={image}
         alt={title}
         loading="lazy"
-        width={image.width}
-        height={image.height}
         class="aspect-[4/5] w-full object-cover"
       />
     </div>
