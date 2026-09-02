@@ -1,0 +1,36 @@
+import type { CollectionEntry } from "astro:content";
+
+export interface GetPublishedNotesOptions {
+  featuredOnly?: boolean;
+}
+
+/**
+ * Filter a notes collection to published entries and sort newest first.
+ *
+ * Excludes drafts (`draft === true`), optionally restricts the result to
+ * featured notes, and sorts by `date` in descending order. The collection
+ * entries already carry a `slug`, which callers use to build detail URLs.
+ */
+export function getPublishedNotes(
+  entries: CollectionEntry<"notes">[],
+  options: GetPublishedNotesOptions = {},
+): CollectionEntry<"notes">[] {
+  const { featuredOnly = false } = options;
+
+  return entries
+    .filter((entry) => entry.data.draft !== true)
+    .filter((entry) => !featuredOnly || entry.data.featured === true)
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+}
+
+/**
+ * Format a note date for display, defaulting to Argentine Spanish ("es-AR").
+ * Example: March 15, 2024 -> "15 de marzo de 2024".
+ */
+export function formatNoteDate(date: Date, locale = "es-AR"): string {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
