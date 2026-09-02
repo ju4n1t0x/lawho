@@ -42,9 +42,9 @@ Threat matrix: all N/A — no RED tests.
 - [x] 2.6 `src/components/Infancias.astro`: abuela, header, 3 cards (infancias)
 - [x] 2.7 `src/components/Impacto.astro`: `bg-leaf` panel, 4 CountUps (impacto)
 - [x] 2.8 `src/components/Misiones.astro`: 3 cards, center offset (misiones)
-- [ ] 2.9 `src/components/Donar.astro`: photo+overlay, copy, 3 aportes, mailto (donar)
-- [ ] 2.10 `src/components/Voluntariado.astro`: 2 cards (`bg-sun` 2nd), mailto (voluntariado)
-- [ ] 2.11 `src/components/Footer.astro`: logo, desc, social links, ©year (footer)
+- [x] 2.9 `src/components/Donar.astro`: photo+overlay, copy, 3 aportes, mailto (donar)
+- [x] 2.10 `src/components/Voluntariado.astro`: 2 cards (`bg-sun` 2nd), mailto (voluntariado)
+- [x] 2.11 `src/components/Footer.astro`: logo, desc, social links, ©year (footer)
 - [x] 2.12 `src/lib/anim.ts`: `easeOutCubic`, `formatEsAr` (countup-animation)
 - [x] 2.13 `Reveal.astro` + `CountUp.astro`: IO, delays, reduced-motion (reveal/countup)
 
@@ -60,11 +60,11 @@ Threat matrix: all N/A — no RED tests.
 
 ## Phase 5: Composition & Cleanup
 
-- [ ] 5.1 Rewrite `src/pages/index.astro`: 10 sections in BaseLayout, serves `/`+`/en/` (i18n-setup)
-- [ ] 5.2 Delete `Welcome.astro`, `Layout.astro`, `astro.svg`, `background.svg` (layout-template)
+- [x] 5.1 Rewrite `src/pages/index.astro`: 10 sections in BaseLayout, serves `/`+`/en/` (i18n-setup)
+- [x] 5.2 Delete `Welcome.astro`, `Layout.astro`, `astro.svg`, `background.svg` (layout-template)
 
 ## Phase 6: Verification
 
-- [ ] 6.1 Grep-env gate on `src/`; amendment first in `git log` (constitution-amendment)
-- [ ] 6.2 `pnpm astro build` (nvm v22.22.3): `/`+`/en/` emitted; no Google Fonts in dist
-- [ ] 6.3 Visual parity, 7 animations, reduced-motion, drawer
+- [x] 6.1 Grep-env gate on `src/`; amendment first in `git log` (constitution-amendment)
+- [x] 6.2 `pnpm astro build` (nvm v22.22.3): `/`+`/en/` emitted; no Google Fonts in dist
+- [x] 6.3 Visual parity, 7 animations, reduced-motion, drawer
