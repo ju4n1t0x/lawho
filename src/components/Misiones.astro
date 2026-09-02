@@ -1,0 +1,74 @@
+---
+import Reveal from "./Reveal.astro";
+import mision1 from "../assets/mision-1.jpg";
+import mision2 from "../assets/mision-2.jpg";
+import mision3 from "../assets/mision-3.jpg";
+
+const misiones = [
+  {
+    img: mision1,
+    alt: "Niño sonriendo durante una jornada sanitaria",
+    tag: "Pediatría y nutrición",
+    titulo: "Atención pediátrica",
+    texto:
+      "Controles, nutrición, odontología y talleres de higiene para prevenir la desnutrición infantil.",
+  },
+  {
+    img: mision2,
+    alt: "Equipo de médicos voluntarios montando una carpa sanitaria",
+    tag: "Diagnóstico",
+    titulo: "Estudios complementarios",
+    texto:
+      "Dos ecógrafos de alta resolución, ecocardiografía, electrocardiógrafo, EEG, doppler fetal y oftalmología.",
+  },
+  {
+    img: mision3,
+    alt: "Vecinos esperando ser atendidos frente a un puesto sanitario",
+    tag: "Comunidad",
+    titulo: "Laboratorio y capacitación",
+    texto:
+      "Muestras analizadas en el Laboratorio Central del Sanatorio Allende y cursos de RCP y primeros auxilios.",
+  },
+];
+---
+
+<section id="misiones" class="mx-auto max-w-6xl px-4 py-24 md:py-32">
+  <Reveal>
+    <div class="mb-14 flex flex-col items-baseline justify-between gap-4 md:flex-row">
+      <h2 class="font-display text-4xl font-semibold tracking-tight md:text-5xl">
+        Lo que pasa en el terreno
+      </h2>
+      <p class="text-xs uppercase tracking-[0.25em] text-muted-foreground">Operativos de salud</p>
+    </div>
+  </Reveal>
+
+  <div class="grid gap-8 md:grid-cols-3">
+    {misiones.map((m, i) => (
+      <div class={i === 1 ? "md:mt-14" : ""}>
+        <Reveal delay={i * 140}>
+          <div class="lift overflow-hidden rounded-[2rem] bg-card">
+            <div class="photo-zoom">
+              <img
+                src={m.img.src}
+                alt={m.alt}
+                loading="lazy"
+                width={600}
+                height={750}
+                class="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+            <div class="p-7">
+              <span
+                class="rounded-full bg-sun px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-sun-foreground"
+              >
+                {m.tag}
+              </span>
+              <h3 class="mt-4 font-display text-2xl font-semibold">{m.titulo}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{m.texto}</p>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    ))}
+  </div>
+</section>
