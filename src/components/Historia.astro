@@ -1,0 +1,80 @@
+---
+import Reveal from "./Reveal.astro";
+import territorio from "../assets/territorio.jpg";
+
+const historia = [
+  {
+    paso: "01",
+    titulo: "Preparamos",
+    texto:
+      "En Córdoba recolectamos y clasificamos la medicación donada por laboratorios: control de vencimientos, armado por especialidad y almacenamiento.",
+  },
+  {
+    paso: "02",
+    titulo: "Viajamos",
+    texto:
+      "1500 km hasta Santa Victoria Este, Salta. Dos días de ruta en vehículos particulares con el equipo médico, la logística y el equipamiento asegurado.",
+  },
+  {
+    paso: "03",
+    titulo: "Atendemos",
+    texto:
+      "Seis días en terreno, unas 2000 consultas de múltiples especialidades en parajes del Departamento Rivadavia Banda Norte, respetando cultura y creencias.",
+  },
+  {
+    paso: "04",
+    titulo: "Seguimos",
+    texto:
+      "Cada consulta queda registrada en la historia clínica digital SAFESA del Ministerio de Salud de Salta, para dar seguimiento operativo tras operativo.",
+  },
+];
+---
+
+<section id="historia" class="px-4 py-24 md:py-32">
+  <div class="mx-auto max-w-6xl">
+    <Reveal>
+      <div class="mb-16 max-w-3xl">
+        <span class="text-xs font-bold uppercase tracking-[0.25em] text-accent">Cómo trabajamos</span>
+        <h2
+          class="mt-5 text-balance font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl"
+        >
+          Dos operativos al año, seis días en terreno y un radio de 100 km desde Santa Victoria Este.
+        </h2>
+      </div>
+    </Reveal>
+
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {historia.map((h, i) => (
+        <Reveal delay={i * 120}>
+          <div class="lift h-full rounded-[2rem] border border-border bg-card p-8">
+            <span class="font-display text-4xl font-semibold text-accent/40">{h.paso}</span>
+            <h3 class="mt-5 font-display text-2xl font-semibold">{h.titulo}</h3>
+            <p class="mt-3 text-sm leading-relaxed text-muted-foreground">{h.texto}</p>
+          </div>
+        </Reveal>
+      ))}
+    </div>
+
+    <Reveal delay={160}>
+      <div class="mt-16 grid items-stretch gap-6 lg:grid-cols-[1.2fr_1fr]">
+        <div class="photo-zoom overflow-hidden rounded-[2.5rem]">
+          <img
+            src={territorio.src}
+            alt="Camioneta de un equipo sanitario recorriendo un camino de ripio en el norte argentino al amanecer"
+            loading="lazy"
+            width={1600}
+            height={912}
+            class="h-full min-h-[18rem] w-full object-cover"
+          />
+        </div>
+        <div class="flex flex-col justify-center rounded-[2.5rem] bg-foreground p-10 text-background">
+          <p class="text-pretty font-display text-2xl leading-snug md:text-3xl">
+            &ldquo;Así como una flor surge en medio de condiciones desafiantes, creemos en el
+            potencial de florecer y construir un futuro próspero para todos.&rdquo;
+          </p>
+          <span class="mt-6 text-xs uppercase tracking-[0.25em] opacity-60">LAWHO Asociación Civil</span>
+        </div>
+      </div>
+    </Reveal>
+  </div>
+</section>
