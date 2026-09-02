@@ -1,0 +1,83 @@
+---
+import Reveal from "./Reveal.astro";
+import abuela from "../assets/comunidad-abuela.jpg";
+import ninos1 from "../assets/ninos-1.jpg";
+import ninos2 from "../assets/ninos-2.jpg";
+import mision1 from "../assets/mision-1.jpg";
+
+const infancias = [
+  {
+    img: ninos1,
+    alt: "Pediatra voluntaria auscultando a un niño en un consultorio comunitario",
+    dato: "Desnutrición",
+    texto: "infantil y del adulto mayor: uno de los focos centrales de cada operativo.",
+  },
+  {
+    img: ninos2,
+    alt: "Manos de una niña sosteniendo un frasco de vitaminas",
+    dato: "Parasitosis",
+    texto: "agravada por la falta de agua potable y las condiciones habitacionales.",
+  },
+  {
+    img: mision1,
+    alt: "Niño sonriendo durante una jornada sanitaria de LAWHO",
+    dato: "Salud bucal",
+    texto: "prevención y educación en niños desde el consultorio odontológico de La Merced.",
+  },
+];
+---
+
+<section id="infancias" class="bg-card px-4 py-24 md:py-32">
+  <div class="mx-auto max-w-6xl">
+    <div class="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+      <Reveal>
+        <div class="photo-zoom overflow-hidden rounded-[2.5rem] rounded-bl-[6rem]">
+          <img
+            src={abuela.src}
+            alt="Abuela de una comunidad originaria abrazando a su nieta frente a su casa"
+            loading="lazy"
+            width={1200}
+            height={1504}
+            class="aspect-[4/5] w-full object-cover"
+          />
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <span class="text-xs font-bold uppercase tracking-[0.25em] text-accent">Infancias</span>
+        <h2
+          class="mt-5 text-balance font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl"
+        >
+          Atendemos a las infancias wichí, chorote, chulupí, toba y criollas del Chaco Salteño.
+        </h2>
+        <p class="mt-6 max-w-[54ch] text-pretty leading-relaxed text-muted-foreground">
+          Trabajamos para frenar la desnutrición infantil, el deterioro de la salud bucal y las
+          parasitosis provocadas por la falta de agua potable, con promoción y prevención de la
+          salud médica, odontológica y nutricional.
+        </p>
+
+        <div class="mt-8 grid gap-4 sm:grid-cols-3">
+          {infancias.map((item, i) => (
+            <Reveal delay={200 + i * 120}>
+              <div class="lift overflow-hidden rounded-3xl bg-background">
+                <div class="photo-zoom">
+                  <img
+                    src={item.img.src}
+                    alt={item.alt}
+                    loading="lazy"
+                    width={600}
+                    height={600}
+                    class="aspect-square w-full object-cover"
+                  />
+                </div>
+                <div class="p-5">
+                  <div class="font-display text-xl font-semibold text-accent">{item.dato}</div>
+                  <p class="mt-1 text-xs leading-relaxed text-muted-foreground">{item.texto}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </Reveal>
+    </div>
+  </div>
+</section>
