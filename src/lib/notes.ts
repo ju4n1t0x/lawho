@@ -26,11 +26,17 @@ export function getPublishedNotes(
 /**
  * Format a note date for display, defaulting to Argentine Spanish ("es-AR").
  * Example: March 15, 2024 -> "15 de marzo de 2024".
+ *
+ * Note dates are date-only values (e.g. `2024-06-15` in frontmatter). The
+ * `z.coerce.date()` schema parses them as UTC midnight, so we format in UTC to
+ * preserve the authored calendar day instead of shifting a day backwards in
+ * negative-offset timezones.
  */
 export function formatNoteDate(date: Date, locale = "es-AR"): string {
   return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   }).format(date);
 }

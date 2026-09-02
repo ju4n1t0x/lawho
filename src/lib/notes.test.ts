@@ -95,4 +95,8 @@ describe("formatNoteDate", () => {
   it("formats a date for en-US when requested", () => {
     expect(formatNoteDate(new Date(2024, 2, 15), "en-US")).toBe("March 15, 2024");
   });
+
+  it("preserves the calendar day for date-only UTC values", () => {
+    expect(formatNoteDate(new Date("2024-06-15"))).toBe("15 de junio de 2024");
+  });
 });
