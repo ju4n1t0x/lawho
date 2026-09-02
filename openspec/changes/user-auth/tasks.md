@@ -50,11 +50,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 5: Blog Live Swap
 
-- [ ] 5.1 Edit `NoteCard.astro`+`NoteTemplate.astro`: image→string `<img src={image}>`, drop `.src/.width/.height`
-- [ ] 5.2 Swap `operativos-de-salud/index.astro`+`en/` to `getLiveCollection`, `prerender=false`
-- [ ] 5.3 Swap `[slug].astro`+`en/` to `getLiveEntry`, render `rendered.html`, 404
-- [ ] 5.4 Delete `src/content.config.ts` notes glob + `src/content/notes/**`; seed body→DB row
-- [ ] 5.5 Grep-audit: no page calls `getCollection('notes')`; home unaffected
+- [x] 5.1 Edit `NoteCard.astro`+`NoteTemplate.astro`: image→string `<img src={image}>`, drop `.src/.width/.height`
+- [x] 5.2 Swap `operativos-de-salud/index.astro`+`en/` to `getLiveCollection`, `prerender=false`
+- [x] 5.3 Swap `[slug].astro`+`en/` to `getLiveEntry`, render `rendered.html`, 404
+- [x] 5.4 Delete `src/content.config.ts` notes glob + `src/content/notes/**`; seed body→DB row
+- [x] 5.5 Grep-audit: no page calls `getCollection('notes')`; home unaffected
 
 ## Phase 6: Docs / Cleanup
 
