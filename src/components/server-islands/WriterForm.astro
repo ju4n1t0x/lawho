@@ -1,0 +1,143 @@
+---
+import { SESSION_COOKIE_NAME } from "../../lib/session";
+import { getActiveSession } from "../../lib/session-repo";
+
+interface Props {
+  error?: string;
+  values?: {
+    title?: string;
+    subtitle?: string;
+    body?: string;
+    tag?: string;
+  };
+}
+
+const { error, values } = Astro.props;
+
+// Server islands run in an isolated request context, so the page middleware
+// does not apply here. Re-check the session cookie in-island and hide the form
+// when the visitor is not authenticated.
+const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+const session = token ? await getActiveSession(token) : null;
+const isAuthenticated = !!session;
+
+const inputClass =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+---
+
+{
+  !isAuthenticated ? (
+    <div class="mx-auto max-w-md rounded-[2rem] border border-border bg-card p-8 text-center">
+      <p class="text-sm text-muted-foreground">
+        Necesitás iniciar sesión para escribir.
+      </p>
+      <a
+        href="/escritor/"
+        class="mt-4 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+      >
+        Ir al inicio de sesión
+      </a>
+    </div>
+  ) : (
+    <div class="mx-auto w-full max-w-2xl">
+      <div class="rounded-[2rem] border border-border bg-card p-8">
+        <h1 class="font-display text-2xl font-semibold">Nueva nota</h1>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Escribí una crónica del terreno. El cuerpo acepta Markdown.
+        </p>
+
+        {error && (
+          <p
+            class="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
+        <form
+          method="POST"
+          action="/escritor/nueva"
+          enctype="multipart/form-data"
+          class="mt-6 grid gap-4"
+        >
+          <div class="grid gap-1.5">
+            <label for="title" class="text-sm font-medium">
+              Título
+            </label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              required
+              value={values?.title ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="subtitle" class="text-sm font-medium">
+              Subtítulo
+            </label>
+            <input
+              id="subtitle"
+              name="subtitle"
+              type="text"
+              required
+              value={values?.subtitle ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="body" class="text-sm font-medium">
+              Cuerpo (Markdown)
+            </label>
+            <textarea
+              id="body"
+              name="body"
+              required
+              rows={12}
+              class={inputClass}
+            >
+              {values?.body ?? ""}
+            </textarea>
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="tag" class="text-sm font-medium">
+              Etiqueta (opcional)
+            </label>
+            <input
+              id="tag"
+              name="tag"
+              type="text"
+              value={values?.tag ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="image" class="text-sm font-medium">
+              Imagen (opcional, JPG/PNG/WebP, máx. 5MB)
+            </label>
+            <input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            Publicar
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
