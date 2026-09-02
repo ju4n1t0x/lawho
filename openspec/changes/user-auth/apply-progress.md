@@ -1,4 +1,59 @@
-# Apply Progress: User Auth + DB-Backed Blog (U3 — Writer + Upload)
+# Apply Progress: User Auth + DB-Backed Blog
+
+## Mode
+
+Standard (strict_tdd: false).
+
+## Delivery
+
+- Chain strategy: `feature-branch-chain`
+- Work unit: **Focused remediation — CRITICAL C1 (sliding TTL wiring)** on branch `feat/user-auth-unit-5-docs`.
+- Boundary: touches only the session-read request path (`src/middleware.ts`, `LoginForm.astro`, `WriterForm.astro`, `session-repo.ts` + its test). No migrations, schema, or other specs changed.
+
+---
+
+## Focused Remediation — CRITICAL C1 (Sliding TTL wiring)
+
+The `session` spec requires "on each authenticated request, `last_seen_at` MUST be updated and `expires_at` MUST be extended by `SESSION_TTL_MS`". `touchSession()` implemented this but was never called, so sessions used a fixed 24h window from creation. This batch wires it in.
+
+### Completed
+
+- [x] Added `getActiveSessionAndTouch(token, ttlMs)` to `src/lib/session-repo.ts` — loads a non-expired session and, only when VALID, slides its TTL (expired/unknown tokens return null and are never renewed).
+- [x] `src/middleware.ts` now loads sessions via `getActiveSessionAndTouch(token, SESSION_TTL_MS)` (sliding renewal on on-demand page requests).
+- [x] `src/components/server-islands/LoginForm.astro` + `WriterForm.astro` now re-check + slide via the same helper (islands run isolated; middleware does not run for them).
+- [x] `src/lib/session-repo.test.ts` — 2 new unit tests: valid token slides TTL; unknown token does NOT touch.
+
+### Files Changed
+
+| File | Action | What |
+|------|--------|------|
+| `src/lib/session-repo.ts` | Modified | Added `getActiveSessionAndTouch` (getActiveSession + touchSession, only touches valid) |
+| `src/middleware.ts` | Modified | Import `SESSION_TTL_MS`; call `getActiveSessionAndTouch` instead of `getActiveSession` |
+| `src/components/server-islands/LoginForm.astro` | Modified | In-island session check now slides TTL |
+| `src/components/server-islands/WriterForm.astro` | Modified | In-island session check now slides TTL |
+| `src/lib/session-repo.test.ts` | Modified | 2 new tests for `getActiveSessionAndTouch` |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused test command + result | `PATH=~/.nvm/.../v22.22.3/bin:$PATH pnpm vitest run` → **78 passed (11 files)**, exit 0 (76 baseline + 2 new `getActiveSessionAndTouch` tests) |
+| Runtime harness + result | Live Postgres + `astro dev` at `:4321`. Synthetic session (`expires_at = now()+1h`, `last_seen_at = now()-2h`) → `GET /escritor/` (middleware) slid `expires_at`→`now()+24h`, `last_seen_at`→`now`; `GET /_server-islands/WriterForm?…` (island, isolated ctx) slid the same. Cleanup: synthetic session deleted (0 rows remain). |
+| Rollback boundary | Revert `src/lib/session-repo.ts` helper, `src/middleware.ts`, `LoginForm.astro`, `WriterForm.astro`, and the 2 new tests. No other unit touched; migrations/schema/other specs untouched. |
+
+### Deviations from Design
+
+- The sliding renewal is implemented as a small `getActiveSessionAndTouch` helper rather than three inline `touchSession` calls, so the "only touch VALID sessions" invariant lives in one tested place and the request path cannot forget the touch. Same behavior, slightly different shape; no design decision changed.
+- No debounce/"renew-only-when-expiring" guard was added. Rationale: the middleware already early-returns for public/static routes (landing + blog), so `touchSession` only fires on the authenticated writer-area requests and island self-checks — exactly the "activity" the spec's sliding window targets. Adding a debounce would deviate from the literal "each authenticated request" requirement for no security benefit at this traffic scale. `SESSION_TTL_MS` default (86400000 = 24h) matches the spec.
+
+### Issues Found
+
+- On `POST /escritor/logout`, the middleware still loads (and now touches) the session before the logout route deletes it — one redundant write then delete. Harmless and spec-compliant (the request presents a valid token); left as-is to avoid a logout special-case in the middleware.
+- W1 from the verify report (task 3.5 unchecked) is out of scope for this focused remediation and left untouched.
+
+---
+
+## Prior Work Unit — U3 (Writer + Upload)
 
 ## Mode
 
@@ -35,15 +90,15 @@ Standard (strict_tdd: false).
 | `migrations/001-init.sql` | Modified | `IF NOT EXISTS` + `ON CONFLICT (slug) DO NOTHING` (idempotent) |
 | `openspec/changes/user-auth/tasks.md` | Modified | Marked 1.1, 4.1–4.4 `[x]` |
 
-## Work Unit Evidence
+## Work Unit Evidence (U3)
 
 | Evidence | Value |
 |---|---|
 | Focused test command + result | `PATH=~/.nvm/.../v22.22.3/bin:$PATH pnpm vitest run` → **76 passed (11 files)**, exit 0 (49 baseline + 7 uploads-mime + 16 uploads + 4 notes-repo) |
-| Runtime harness + result | `astro dev` (restarted to load adapter) → login POST 302 + Set-Cookie; publish POST 302 → `/operativos-de-salud/nota-de-prueba-e2e/`; blog index contains slug; detail 200 with `rendered.html` `<h1 id="nota-de-prueba-e2e">`. See §E2E below. |
+| Runtime harness + result | `astro dev` (restarted to load adapter) → login POST 302 + Set-Cookie; publish POST 302 → `/operativos-de-salud/nota-de-prueba-e2e/`; blog index contains slug; detail 200 with `rendered.html` `<h1 id="nota-de-prueba-e2e">`. |
 | Rollback boundary | Revert `src/lib/uploads-mime.*`, `src/lib/uploads.*`, `src/lib/notes-repo.ts` `createNote`/`slugify`, `src/pages/escritor/nueva.astro`, `src/components/server-islands/WriterForm.astro`, `astro.config.mjs` env line, `.gitignore` `uploads/` line, `migrations/001-init.sql` idempotency guard. Blog/auth (U1/U2/U4) untouched. |
 
-## DB Migration + E2E
+## DB Migration + E2E (U3)
 
 ### Migration
 
@@ -54,41 +109,26 @@ Standard (strict_tdd: false).
 
 ### E2E (server-side, no browser)
 
-1. Dev user: `dev-review@lawho.local` (role writer, is_active true, argon2id hash). Password recorded below for reviewer only — never committed.
+1. Dev user: `dev-review@lawho.local` (role writer, is_active true, argon2id hash). Password recorded for reviewer only — never committed.
 2. `GET /escritor/` → HTTP 200.
 3. `POST /escritor/` (Origin header set) → **302** → `/escritor/nueva`, `Set-Cookie: lawho_session=…; HttpOnly; SameSite=Lax`. A `sessions` row appeared (verified via SQL).
 4. `POST /escritor/nueva` (multipart, `Origin` set, real 1×1 PNG) → **302** → `/operativos-de-salud/nota-de-prueba-e2e/`.
 5. `GET /operativos-de-salud/` → blog index contains `nota-de-prueba-e2e`.
-6. `GET /operativos-de-salud/nota-de-prueba-e2e/` → HTTP 200; `.note-body` contains `<h1 id="nota-de-prueba-e2e">Nota de prueba e2e</h1>` (Markdown rendered via live loader).
-7. Cleanup: deleted test note (DELETE 1), deleted dev sessions (DELETE 1), removed test upload file + `uploads/` dir.
+6. `GET /operativos-de-salud/nota-de-prueba-e2e/` → HTTP 200; `.note-body` contains `<h1 id="nota-de-prueba-e2e">Nota de prueba e2e</h1>`.
+7. Cleanup: deleted test note, deleted dev sessions, removed test upload file + `uploads/` dir.
 
-### What was left in the DB
+## Deviations from Design (U3)
 
-- `users`: 1 row — `dev-review@lawho.local` (kept for reviewer login; dev-only email).
-- `notes`: 1 row — seed `primer-operativo-2024` (test note removed).
-- `sessions`: 0 rows (test session removed).
-
-### Dev test password
-
-The dev-only user `dev-review@lawho.local` has an argon2id-hashed password generated during this apply. The plaintext is delivered to the orchestrator in the return envelope only and is NOT committed (per maintainer instruction).
-
-## Deviations from Design
-
-- `uploads.ts` takes upload config (`uploadsDir`, `publicUploadsUrl`, `maxBytes`) as a parameter instead of importing `astro:env/server` directly. Rationale: keeps the library pure and unit-testable without mocking Astro's virtual env module; the env values are read in the page (`nueva.astro`) from `astro:env/server` and injected. Matches the "layer separation" rule (rule 3).
-- Added `MAX_UPLOAD_SIZE_BYTES` to `astro.config.mjs` env schema to honor the "size cap configurable via env (default 5MB)" spec (SHOULD).
+- `uploads.ts` takes upload config as a parameter instead of importing `astro:env/server` directly, keeping the library pure/unit-testable.
+- Added `MAX_UPLOAD_SIZE_BYTES` to `astro.config.mjs` env schema (SHOULD).
 - Added `uploads/` to `.gitignore` (runtime artifact housekeeping).
-- `createNote` generates the slug from the title and appends a short random suffix on collision (SELECT-then-insert). Not concurrency-safe for simultaneous identical titles, acceptable for the single-writer dev scenario.
+- `createNote` generates the slug from the title and appends a short random suffix on collision (SELECT-then-insert), acceptable for single-writer dev.
 
-## Issues Found
+## Issues Found (U3)
 
-- The pre-existing dev server (started ~16:10) served server islands with `NoAdapterInstalledServerIslands` (500) because it predated the adapter config; a full `astro dev stop` + restart fixed it. Recorded so future sessions restart rather than rely on hot reload for adapter changes.
-- Astro rejects cross-site POSTs ("Cross-site POST form submissions are forbidden") unless the request carries a matching `Origin` header; curl e2e had to set `Origin: http://localhost:4321`.
-
-## Remaining Tasks
-
-- [ ] 3.5 RED/inspect: unauth `/_server-islands/*` blocked; login+logout e2e (login e2e exercised here; island self-auth + logout e2e still pending live verification — documented gap)
-- [ ] 6.1–6.5 (U5/U6 docs/cleanup): README, `.env.example`, `deploy/nginx.conf.example`, config context, final security re-check
+- Pre-existing dev server served server islands with `NoAdapterInstalledServerIslands` until a full `astro dev stop` + restart (adapter change requires restart, not hot reload).
+- Astro rejects cross-site POSTs unless the request carries a matching `Origin` header; curl e2e set `Origin: http://localhost:4321`.
 
 ## Status
 
-5/5 U3 tasks complete. Ready for verify (U3); U5/U6 remain for the next unit.
+C1 remediation complete (code + 2 tests + runtime sliding verified). Ready for re-verify. Task 3.5 (W1) remains open out of scope.
