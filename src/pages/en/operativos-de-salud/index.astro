@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import NoteCard from "../../../components/NoteCard.astro";
 import { getPublishedNotes } from "../../../lib/notes";
 
 const notes = getPublishedNotes(await getCollection("notes"));
@@ -31,27 +32,7 @@ const notes = getPublishedNotes(await getCollection("notes"));
       ) : (
         <div class="grid gap-8 md:grid-cols-3">
           {notes.map((note) => (
-            <a
-              href={`/operativos-de-salud/${note.slug}/`}
-              class="lift overflow-hidden rounded-[2rem] bg-card"
-            >
-              <div class="photo-zoom">
-                <img
-                  src={note.data.image.src}
-                  alt={note.data.title}
-                  loading="lazy"
-                  width={note.data.image.width}
-                  height={note.data.image.height}
-                  class="aspect-[4/5] w-full object-cover"
-                />
-              </div>
-              <div class="p-7">
-                <h2 class="font-display text-2xl font-semibold">{note.data.title}</h2>
-                <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {note.data.subtitle}
-                </p>
-              </div>
-            </a>
+            <NoteCard note={note} />
           ))}
         </div>
       )
