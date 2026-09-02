@@ -1,0 +1,29 @@
+---
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang={Astro.currentLocale ?? "es"}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <title>LAWHO | Operativos de salud en el Chaco Salteño</title>
+    <meta
+      name="description"
+      content="Asociación civil de médicos voluntarios que realizan operativos de salud gratuitos en comunidades originarias del Chaco Salteño, Salta. Sumate como voluntario o colaborá."
+    />
+    <meta property="og:title" content="LAWHO Asociación Civil | Médicos voluntarios" />
+    <meta
+      property="og:description"
+      content="Dos operativos al año, seis días de trabajo en terreno y unas 2000 consultas por operativo junto a las comunidades wichí, chorote, chulupí, toba y criollas."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
