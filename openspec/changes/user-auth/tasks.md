@@ -58,8 +58,8 @@ Chain strategy: feature-branch-chain
 
 ## Phase 6: Docs / Cleanup
 
-- [ ] 6.1 `README.md`: Postgres, migration, env vars, nvm≥22.12, `/etc/hosts`, `/escritor/`
-- [ ] 6.2 `.env.example` placeholders for new vars
-- [ ] 6.3 `deploy/nginx.conf.example` — vhost, proxy_pass, `/uploads/**`, TLS+nosniff
-- [ ] 6.4 `openspec/config.yaml` context: adapter, live collections, consumed DB
-- [ ] 6.5 Final security re-check + tests + build green
+- [x] 6.1 `README.md`: Postgres, migration, env vars, nvm≥22.12, `/etc/hosts`, `/escritor/`
+- [x] 6.2 `.env.example` placeholders for new vars
+- [x] 6.3 `deploy/nginx.conf.example` — vhost, proxy_pass, `/uploads/**`, TLS+nosniff
+- [x] 6.4 `openspec/config.yaml` context: adapter, live collections, consumed DB
+- [x] 6.5 Final security re-check + tests + build green
