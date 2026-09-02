@@ -1,10 +1,5 @@
 ---
-import { getCollection } from "astro:content";
 import Reveal from "./Reveal.astro";
-import NoteCard from "./NoteCard.astro";
-import { getPublishedNotes } from "../lib/notes";
-
-const notes = getPublishedNotes(await getCollection("notes"), { featuredOnly: true });
 ---
 
 <section id="misiones" class="mx-auto max-w-6xl px-4 py-24 md:py-32">
@@ -22,11 +17,8 @@ const notes = getPublishedNotes(await getCollection("notes"), { featuredOnly: tr
     </div>
   </Reveal>
 
-  <div class="grid gap-8 md:grid-cols-3">
-    {notes.map((note, i) => (
-      <div class={i === 1 ? "md:mt-14" : ""}>
-        <NoteCard note={note} delay={i * 140} />
-      </div>
-    ))}
-  </div>
+  <p class="text-muted-foreground">
+    Los últimos operativos de salud, crónica a crónica, están disponibles en
+    la bitácora pública.
+  </p>
 </section>
