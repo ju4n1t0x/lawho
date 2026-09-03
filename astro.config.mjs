@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://<tu-usuario>.github.io',
+  base: '/<nombre-repositorio>/',
   vite: {
     plugins: [tailwindcss()],
   },
@@ -23,6 +25,6 @@ export default defineConfig({
       DATABASE_NAME: envField.string({ context: 'server', access: 'secret' }),
       DATABASE_SSL: envField.boolean({ context: 'server', access: 'public', default: false }),
     },
-    validateSecrets: true,
+    validateSecrets: false,
   },
 });
