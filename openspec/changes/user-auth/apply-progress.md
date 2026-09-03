@@ -63,15 +63,15 @@ Standard (strict_tdd: false).
 
 - Chain strategy: `feature-branch-chain`
 - Work unit: U3 (writer + upload) on branch `feat/user-auth-unit-3`, based `feat/user-auth-unit-4`.
-- Boundary: starts from the U4 blog-swap tip; adds magic-byte MIME sniff, filesystem upload saver, `createNote`, the `/escritor/nueva` page + `WriterForm` island, and the idempotent migration. Ends before U5/U6 docs/cleanup.
+- Boundary: starts from the U4 blog-swap tip; adds magic-byte MIME sniff, filesystem upload saver, `createNote`, the `/escritor/nueva` (read-only) page + `WriterForm` island, and the idempotent migration. Ends before U5/U6 docs/cleanup.
 
 ## Completed Tasks (this unit)
 
-- [x] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF, `../..` all rejected
+- [x] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF, `../..` (read-only) all rejected
 - [x] 4.1 `src/lib/uploads.ts` + `src/lib/uploads-mime.ts` — magic-byte sniff, ≤5MB, sanitized `[a-z0-9._-]`, unique name
 - [x] 4.2 `src/pages/escritor/nueva.astro` (`prerender=false`) → `<WriterForm server:defer />`
 - [x] 4.3 `src/components/server-islands/WriterForm.astro` — multipart form, Spanish messages
-- [x] 4.4 Publish: save upload → public URL → INSERT → redirect `/operativos-de-salud/<slug>/`
+- [x] 4.4 Publish: save upload → public URL → INSERT → redirect `/operativos-de-salud/<slug>/` (read-only)
 
 ## Files Changed
 
@@ -95,7 +95,7 @@ Standard (strict_tdd: false).
 | Evidence | Value |
 |---|---|
 | Focused test command + result | `PATH=~/.nvm/.../v22.22.3/bin:$PATH pnpm vitest run` → **76 passed (11 files)**, exit 0 (49 baseline + 7 uploads-mime + 16 uploads + 4 notes-repo) |
-| Runtime harness + result | `astro dev` (restarted to load adapter) → login POST 302 + Set-Cookie; publish POST 302 → `/operativos-de-salud/nota-de-prueba-e2e/`; blog index contains slug; detail 200 with `rendered.html` `<h1 id="nota-de-prueba-e2e">`. |
+| Runtime harness + result | `astro dev` (restarted to load adapter) → login POST 302 + Set-Cookie; publish POST 302 → `/operativos-de-salud/nota-de-prueba-e2e/` (read-only); blog index contains slug; detail 200 with `rendered.html` `<h1 id="nota-de-prueba-e2e">`. |
 | Rollback boundary | Revert `src/lib/uploads-mime.*`, `src/lib/uploads.*`, `src/lib/notes-repo.ts` `createNote`/`slugify`, `src/pages/escritor/nueva.astro`, `src/components/server-islands/WriterForm.astro`, `astro.config.mjs` env line, `.gitignore` `uploads/` line, `migrations/001-init.sql` idempotency guard. Blog/auth (U1/U2/U4) untouched. |
 
 ## DB Migration + E2E (U3)
@@ -111,8 +111,8 @@ Standard (strict_tdd: false).
 
 1. Dev user: `dev-review@lawho.local` (role writer, is_active true, argon2id hash). Password recorded for reviewer only — never committed.
 2. `GET /escritor/` → HTTP 200.
-3. `POST /escritor/` (Origin header set) → **302** → `/escritor/nueva`, `Set-Cookie: lawho_session=…; HttpOnly; SameSite=Lax`. A `sessions` row appeared (verified via SQL).
-4. `POST /escritor/nueva` (multipart, `Origin` set, real 1×1 PNG) → **302** → `/operativos-de-salud/nota-de-prueba-e2e/`.
+3. `POST /escritor/` (Origin header set) → **302** → `/escritor/nueva` (read-only), `Set-Cookie: lawho_session=…; HttpOnly; SameSite=Lax`. A `sessions` row appeared (verified via SQL).
+4. `POST /escritor/nueva` (multipart, `Origin` set, real 1×1 PNG) → **302** → `/operativos-de-salud/nota-de-prueba-e2e/` (read-only).
 5. `GET /operativos-de-salud/` → blog index contains `nota-de-prueba-e2e`.
 6. `GET /operativos-de-salud/nota-de-prueba-e2e/` → HTTP 200; `.note-body` contains `<h1 id="nota-de-prueba-e2e">Nota de prueba e2e</h1>`.
 7. Cleanup: deleted test note, deleted dev sessions, removed test upload file + `uploads/` dir.
@@ -132,3 +132,29 @@ Standard (strict_tdd: false).
 ## Status
 
 C1 remediation complete (code + 2 tests + runtime sliding verified). Ready for re-verify. Task 3.5 (W1) remains open out of scope.
+
+---
+
+## Phase 7: Security — Noindex / Robots (apply-progress)
+
+- Branch: `feat/user-auth-unit-5-docs`
+- Work unit: `security-noindex-robots`
+- Outcome: **passed** (ledger settled)
+
+### What changed
+
+| File | Change |
+|------|--------|
+| `src/middleware.ts` | `response.headers.set("X-Robots-Tag", "noindex, nofollow")` on all `/escritor/**` responses |
+| `public/robots.txt` | NEW — `User-agent: *` / `Disallow: /escritor/` |
+| `openspec/changes/user-auth/specs/login/spec.md` | NEW requirement "Writer Section Not Indexable" (2 scenarios) |
+| `openspec/changes/user-auth/tasks.md` | 3.5 marked `[x]` (reconciled); Phase 7 tasks added |
+
+### Evidence
+
+| Check | Result |
+|-------|--------|
+| `vitest run` | 78/78 passed (11 files), exit 0 |
+| `astro build` | exit 0; `dist/client/robots.txt` present |
+| `curl -sI /escritor/` | `x-robots-tag: noindex, nofollow` ✓ |
+| `curl -s /robots.txt` | `Disallow: /escritor/` ✓ |

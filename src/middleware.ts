@@ -38,5 +38,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect("/escritor/");
   }
 
-  return next();
+  const response = await next();
+  // Prevent search engines from indexing the writer section.
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
 });
