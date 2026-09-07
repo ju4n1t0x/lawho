@@ -17,25 +17,25 @@ const { Content } = await render(entry);
 
 const sessionToken = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
 const isWriter = sessionToken ? !!(await getActiveSession(sessionToken)) : false;
+const backHref = isWriter ? "/escritor/" : "/operativos-de-salud/";
+const backLabel = isWriter ? "Back to /escritor" : "Back to operativos";
 ---
 
 <BaseLayout>
   <div class="mx-auto flex max-w-3xl items-center justify-between px-4 pt-8">
     <a
-      href="/en/"
+      href={backHref}
       class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-accent"
     >
       <span aria-hidden="true">←</span>
+      {backLabel}
+    </a>
+    <a
+      href="/en/"
+      class="inline-flex items-center gap-2 rounded-full bg-leaf px-4 py-2 text-sm font-semibold text-leaf-foreground transition-colors hover:opacity-90"
+    >
       Back to home
     </a>
-    {isWriter && (
-      <a
-        href="/escritor/"
-        class="inline-flex items-center gap-2 rounded-full bg-leaf px-4 py-2 text-sm font-semibold text-leaf-foreground transition-colors hover:opacity-90"
-      >
-        Back to /escritor
-      </a>
-    )}
   </div>
   <NoteTemplate note={entry} Content={Content} />
 </BaseLayout>
