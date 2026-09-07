@@ -5,7 +5,7 @@
 -- citext enables case-insensitive email comparison.
 CREATE EXTENSION IF NOT EXISTS citext;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id serial PRIMARY KEY,
   email citext UNIQUE NOT NULL,
   password_hash text NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE users (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id serial PRIMARY KEY,
   user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token text UNIQUE NOT NULL,
@@ -24,9 +24,9 @@ CREATE TABLE sessions (
 );
 
 -- token is UNIQUE (already indexed by the unique constraint); index the FK for lookups.
-CREATE INDEX sessions_user_id_idx ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
 
-CREATE TABLE notes (
+CREATE TABLE IF NOT EXISTS notes (
   id serial PRIMARY KEY,
   slug text UNIQUE NOT NULL,
   title text NOT NULL,
@@ -61,4 +61,5 @@ Volvimos con más preguntas que respuestas y con la certeza de que esto recién 
   true,
   'Equipo LaWho',
   'Salud comunitaria'
-);
+)
+ON CONFLICT (slug) DO NOTHING;

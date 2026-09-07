@@ -18,7 +18,7 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Foundation
 
-- [ ] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF (`47 49 46 38`), `../..` all rejected (DEFERRED to U3 — production `uploads-mime.ts` lives in task 4.1)
+- [x] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF (`47 49 46 38`), `../..` all rejected (DEFERRED to U3 — production `uploads-mime.ts` lives in task 4.1)
 - [x] 1.2 Commit `docs/constitution.md` rule-1 amendment (permit `@astrojs/node`, `pg`, `argon2`, renderer) FIRST, atomic
 - [x] 1.3 `pnpm add` deps; adapter standalone; env schema in `astro.config.mjs`
 - [x] 1.4 `migrations/001-init.sql`: users, sessions, notes (body/image_url/slug UNIQUE/date) + seed `primer-operativo-2024`
@@ -43,10 +43,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Writer + Upload
 
-- [ ] 4.1 `src/lib/uploads.ts`+`uploads-mime.ts` — magic-byte sniff (jpeg/png/webp), ≤5MB, sanitized `[a-z0-9._-]`, unique name; RED: bad-MIME/size/traversal
-- [ ] 4.2 `src/pages/escritor/nueva.astro` (`prerender=false`) → `<WriterForm server:defer />`; hidden without session
-- [ ] 4.3 `src/components/server-islands/WriterForm.astro` — multipart fields; Spanish msgs (`La imagen no debe superar 5MB`, `Formato de imagen no permitido`)
-- [ ] 4.4 Publish: save upload→`PUBLIC_UPLOADS_URL` URL→INSERT→redirect `/operativos-de-salud/<slug>/`
+- [x] 4.1 `src/lib/uploads.ts`+`uploads-mime.ts` — magic-byte sniff (jpeg/png/webp), ≤5MB, sanitized `[a-z0-9._-]`, unique name; RED: bad-MIME/size/traversal
+- [x] 4.2 `src/pages/escritor/nueva.astro` (`prerender=false`) → `<WriterForm server:defer />`; hidden without session
+- [x] 4.3 `src/components/server-islands/WriterForm.astro` — multipart fields; Spanish msgs (`La imagen no debe superar 5MB`, `Formato de imagen no permitido`)
+- [x] 4.4 Publish: save upload→`PUBLIC_UPLOADS_URL` URL→INSERT→redirect `/operativos-de-salud/<slug>/`
 
 ## Phase 5: Blog Live Swap
 
