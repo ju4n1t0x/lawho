@@ -28,3 +28,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local tooling (opencode/claude) — not part of the project
+.atl/
+.vscode/
