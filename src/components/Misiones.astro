@@ -70,6 +70,7 @@ const notes = getPublishedNotes(result.entries ?? [], { featuredOnly: true }).sl
 </section>
 
 <script>
+  import { resolveScrollBehavior, exceedsDragThreshold } from "../lib/carousel";
   (() => {
     const KEY = "__lawhoCarousel";
     const g = window as unknown as Record<string, unknown>;
@@ -79,16 +80,6 @@ const notes = getPublishedNotes(result.entries ?? [], { featuredOnly: true }).sl
     const prefersReducedMotion = matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-
-    // Import helpers — inlined at build time by Astro/Vite
-    const resolveScrollBehavior = (reduced: boolean): ScrollBehavior =>
-      reduced ? "auto" : "smooth";
-
-    const exceedsDragThreshold = (
-      dx: number,
-      dy: number,
-      threshold = 8,
-    ): boolean => Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy);
 
     const behavior = resolveScrollBehavior(prefersReducedMotion);
 
@@ -117,11 +108,13 @@ const notes = getPublishedNotes(result.entries ?? [], { featuredOnly: true }).sl
 
       // Pointer drag / swipe
       let startX = 0;
+      let startY = 0;
       let startScroll = 0;
       let dragging = false;
 
       track.addEventListener("pointerdown", (e) => {
         startX = e.clientX;
+        startY = e.clientY;
         startScroll = track.scrollLeft;
         dragging = false;
         track.style.scrollSnapType = "none";
@@ -130,7 +123,7 @@ const notes = getPublishedNotes(result.entries ?? [], { featuredOnly: true }).sl
       track.addEventListener("pointermove", (e) => {
         if (e.buttons !== 1) return;
         const dx = e.clientX - startX;
-        const dy = e.clientY - startX;
+        const dy = e.clientY - startY;
         if (!dragging && exceedsDragThreshold(dx, dy)) dragging = true;
         if (dragging) track.scrollLeft = startScroll - dx;
       });
