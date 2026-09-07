@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
 
@@ -8,6 +8,7 @@ import {
   createSession,
   deleteSessionByToken,
   getActiveSession,
+  getActiveSessionAndTouch,
   touchSession,
 } from "./session-repo";
 
@@ -77,6 +78,38 @@ describe("touchSession", () => {
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE sessions"),
       ["tok", expect.any(Date)],
+    );
+  });
+});
+
+describe("getActiveSessionAndTouch", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it("returns the session and slides the TTL for a valid token", async () => {
+    query.mockResolvedValueOnce({ rows: [sessionRow] }); // SELECT in getActiveSession
+    query.mockResolvedValueOnce({ rows: [] }); // UPDATE in touchSession
+
+    const session = await getActiveSessionAndTouch("tok", 86_400_000);
+
+    expect(session).not.toBeNull();
+    expect(session?.userId).toBe(7);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE sessions"),
+      ["tok", expect.any(Date)],
+    );
+  });
+
+  it("does not slide the TTL for an unknown token", async () => {
+    query.mockResolvedValueOnce({ rows: [] }); // SELECT returns nothing
+
+    const session = await getActiveSessionAndTouch("bad-token", 86_400_000);
+
+    expect(session).toBeNull();
+    expect(query).not.toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE sessions"),
+      expect.anything(),
     );
   });
 });

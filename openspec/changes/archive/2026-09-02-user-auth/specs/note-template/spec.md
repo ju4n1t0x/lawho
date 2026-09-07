@@ -1,14 +1,12 @@
-# Note Template Specification
+# Delta for Note Template
 
-## Purpose
-
-The `/operativos-de-salud/[...slug]` detail page renders a single note with hero image, metadata, and Markdown body.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Detail Route
 
 The system MUST serve a page at `/operativos-de-salud/[slug]/` (read-only) for each published note, sourced from `getLiveEntry('notes', slug)`. The page MUST be on-demand (`export const prerender = false`).
+
+(Previously: the page used `getStaticPaths()` over the build-time collection and was statically prerendered.)
 
 #### Scenario: Detail page renders
 
@@ -72,6 +70,8 @@ When `author` is present, the page MUST display it. When `tag` is present, the p
 
 The page MUST render the note's Markdown body via `context.renderMarkdown(body)` from the live collection context.
 
+(Previously: the body was rendered via `await render(entry)` producing a `Content` component from the glob loader.)
+
 #### Scenario: Body renders
 
 - GIVEN a note with Markdown body content in the DB
@@ -91,6 +91,8 @@ Visiting a slug that does not match any note MUST return a 404 response.
 ### Requirement: English Mirror
 
 The system MUST serve an English mirror at `/en/operativos-de-salud/[slug]/` (read-only). The mirror MUST also be on-demand (`prerender = false`).
+
+(Previously: the mirror was statically prerendered via `getStaticPaths()`.)
 
 #### Scenario: En mirror renders same note
 

@@ -18,7 +18,7 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Foundation
 
-- [x] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF (`47 49 46 38`), `../..` all rejected (DEFERRED to U3 — production `uploads-mime.ts` lives in task 4.1)
+- [x] 1.1 RED: `src/lib/uploads-mime.test.ts` — script-as-`.png`, `.jpg`-GIF (`47 49 46 38`), `../..` (read-only) all rejected (DEFERRED to U3 — production `uploads-mime.ts` lives in task 4.1)
 - [x] 1.2 Commit `docs/constitution.md` rule-1 amendment (permit `@astrojs/node`, `pg`, `argon2`, renderer) FIRST, atomic
 - [x] 1.3 `pnpm add` deps; adapter standalone; env schema in `astro.config.mjs`
 - [x] 1.4 `migrations/001-init.sql`: users, sessions, notes (body/image_url/slug UNIQUE/date) + seed `primer-operativo-2024`
@@ -35,18 +35,18 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Auth Flow
 
-- [x] 3.1 `src/components/server-islands/LoginForm.astro` (`server:defer`): Spanish UI, POST→checkPassword→cookie→redirect `/escritor/nueva`; Spanish error msgs
+- [x] 3.1 `src/components/server-islands/LoginForm.astro` (`server:defer`): Spanish UI, POST→checkPassword→cookie→redirect `/escritor/nueva` (read-only); Spanish error msgs
 - [x] 3.2 `src/pages/escritor/index.astro` (`prerender=false`); island self-checks cookie → writer UI when authed
-- [x] 3.3 `src/middleware.ts` — session→`Astro.locals.user` for pages; redirect unauth `/escritor/nueva`
+- [x] 3.3 `src/middleware.ts` — session→`Astro.locals.user` for pages; redirect unauth `/escritor/nueva` (read-only)
 - [x] 3.4 `src/pages/escritor/logout.ts` POST — delete session row, clear cookie, redirect
-- [ ] 3.5 RED/inspect: unauth `/_server-islands/*` blocked; login+logout e2e (pure session-repo RED tests done; e2e login/logout + island self-auth need live DB — documented gap)
+- [x] 3.5 RED/inspect: unauth `/_server-islands/*` (read-only) blocked; login+logout e2e (pure session-repo RED tests done; e2e login/logout + island self-auth need live DB — documented gap) (RECONCILED: runtime-verified in C1 remediation + re-verify PASS)
 
 ## Phase 4: Writer + Upload
 
 - [x] 4.1 `src/lib/uploads.ts`+`uploads-mime.ts` — magic-byte sniff (jpeg/png/webp), ≤5MB, sanitized `[a-z0-9._-]`, unique name; RED: bad-MIME/size/traversal
 - [x] 4.2 `src/pages/escritor/nueva.astro` (`prerender=false`) → `<WriterForm server:defer />`; hidden without session
 - [x] 4.3 `src/components/server-islands/WriterForm.astro` — multipart fields; Spanish msgs (`La imagen no debe superar 5MB`, `Formato de imagen no permitido`)
-- [x] 4.4 Publish: save upload→`PUBLIC_UPLOADS_URL` URL→INSERT→redirect `/operativos-de-salud/<slug>/`
+- [x] 4.4 Publish: save upload→`PUBLIC_UPLOADS_URL` URL→INSERT→redirect `/operativos-de-salud/<slug>/` (read-only)
 
 ## Phase 5: Blog Live Swap
 
@@ -58,8 +58,14 @@ Chain strategy: feature-branch-chain
 
 ## Phase 6: Docs / Cleanup
 
-- [ ] 6.1 `README.md`: Postgres, migration, env vars, nvm≥22.12, `/etc/hosts`, `/escritor/`
-- [ ] 6.2 `.env.example` placeholders for new vars
-- [ ] 6.3 `deploy/nginx.conf.example` — vhost, proxy_pass, `/uploads/**`, TLS+nosniff
-- [ ] 6.4 `openspec/config.yaml` context: adapter, live collections, consumed DB
-- [ ] 6.5 Final security re-check + tests + build green
+- [x] 6.1 `README.md`: Postgres, migration, env vars, nvm≥22.12, `/etc/hosts` (read-only), `/escritor/` (read-only)
+- [x] 6.2 `.env.example` placeholders for new vars
+- [x] 6.3 `deploy/nginx.conf.example` — vhost, proxy_pass, `/uploads/**` (read-only), TLS+nosniff
+- [x] 6.4 `openspec/config.yaml` context: adapter, live collections, consumed DB
+- [x] 6.5 Final security re-check + tests + build green
+
+## Phase 7: Security — Noindex / Robots
+
+- [x] 7.1 `src/middleware.ts` — `X-Robots-Tag: noindex, nofollow` on `/escritor/**` (read-only) responses
+- [x] 7.2 `public/robots.txt` — `Disallow: /escritor/`
+- [x] 7.3 `specs/login/spec.md` — add "Writer Section Not Indexable" requirement (2 scenarios)

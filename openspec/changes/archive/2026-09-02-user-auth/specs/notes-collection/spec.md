@@ -1,14 +1,12 @@
-# Notes Collection Specification
+# Delta for Notes Collection
 
-## Purpose
-
-Defines the `notes` content collection: schema, loader, and the contract between the read-side and the future write-side (DB/loader swap).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Collection Declaration
 
 The system MUST declare a `notes` live collection in `src/live.config.ts` using `defineLiveCollection` with a `LiveLoader` that reads from PostgreSQL via `src/lib/notes-repo.ts`. The build-time `glob` loader in `src/content.config.ts` MUST be removed for the `notes` collection.
+
+(Previously: `notes` was a build-time `glob` collection in `src/content.config.ts` over `src/content/notes/**/*.md`.)
 
 #### Scenario: Collection loads from Postgres
 
@@ -25,6 +23,8 @@ The system MUST declare a `notes` live collection in `src/live.config.ts` using 
 ### Requirement: Schema Fields
 
 The live collection schema MUST declare these fields: `title` (string, MUST), `subtitle` (string, MUST), `image` (string URL, MUST), `date` (date, MUST), `draft` (boolean, default false, MUST), `featured` (boolean, default true, MUST), `author` (string, SHOULD), `tag` (string, MAY). The `image` field is now a string URL (from `PUBLIC_UPLOADS_URL`) rather than the Astro `image()` helper.
+
+(Previously: `image` used the Astro `image()` helper resolving build-time assets.)
 
 #### Scenario: Required fields validated
 
@@ -77,6 +77,8 @@ The schema fields and their types MUST remain stable across the loader migration
 ### Requirement: Seed Note
 
 The system MUST ship at least one seed note as a DB row inserted by `migrations/001-init.sql` (or a seed script) so the blog index renders content on first deploy.
+
+(Previously: seed note was `src/content/notes/primer-operativo-2024.md`.)
 
 #### Scenario: Seed note present after migration
 

@@ -83,6 +83,24 @@ export async function touchSession(token: string, ttlMs: number): Promise<void> 
 }
 
 /**
+ * Load a non-expired session and, when valid, slide its TTL (touch).
+ * Wraps `getActiveSession` + `touchSession` so every authenticated request
+ * path renews the sliding window without being able to forget the touch:
+ * only VALID sessions are touched (expired/unknown tokens return null and are
+ * never renewed).
+ */
+export async function getActiveSessionAndTouch(
+  token: string,
+  ttlMs: number,
+): Promise<ActiveSession | null> {
+  const session = await getActiveSession(token);
+  if (session) {
+    await touchSession(token, ttlMs);
+  }
+  return session;
+}
+
+/**
  * Delete a session row by token (logout invalidation).
  */
 export async function deleteSessionByToken(token: string): Promise<void> {

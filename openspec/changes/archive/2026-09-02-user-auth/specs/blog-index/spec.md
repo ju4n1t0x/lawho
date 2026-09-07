@@ -1,14 +1,12 @@
-# Blog Index Specification
+# Delta for Blog Index
 
-## Purpose
-
-The `/operativos-de-salud/` page renders a grid of published note miniatures sorted by date.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Blog Index Route
 
 The system MUST serve a page at `/operativos-de-salud/` (read-only) that displays a grid of published notes sourced from `getLiveCollection('notes')`. The page MUST be on-demand (`export const prerender = false`).
+
+(Previously: the page sourced notes from `getCollection('notes')` at build time and was statically prerendered.)
 
 #### Scenario: Index renders published notes
 
@@ -71,6 +69,8 @@ Each published note MUST render as a `NoteCard` component linking to its detail 
 ### Requirement: English Mirror
 
 The system MUST serve an English mirror at `/en/operativos-de-salud/` (read-only) rendering the same published notes per the i18n fallback convention. The mirror MUST also be on-demand (`prerender = false`).
+
+(Previously: the mirror was statically prerendered.)
 
 #### Scenario: En mirror renders same content
 

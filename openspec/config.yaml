@@ -1,13 +1,13 @@
 schema: spec-driven
 
 context: |
-  Tech stack: Astro 7.2.10 (standard library only), TypeScript strict, pnpm, Node >=22.12.0
+  Tech stack: Astro 7.2.10, TypeScript strict, pnpm, Node >=22.12.0. Sanctioned deps (constitution rule 1 amendment): @astrojs/node (standalone adapter), pg, argon2, @astrojs/markdown-satteri, TailwindCSS v4.
   Architecture: Landing page (NavBar, Historia, Infancias, Terreno, Sumate, Dona, Footer)
-    + internal blog /operativos-de-salud (content collections: index + [slug] detail, es + en mirrors)
-    + authenticated subdomain for post writing (server islands, auth)
-  Testing: vitest ^4.1.11 installed; `pnpm test` -> `vitest run`; unit tests: src/lib/anim.test.ts, src/lib/notes.test.ts. No e2e (playwright/cypress) or jest.
+    + internal blog /operativos-de-salud backed by a LIVE Postgres collection (src/live.config.ts; getLiveCollection/getLiveEntry; index + [slug], es + en mirrors)
+    + authenticated writer area /escritor/** (server islands LoginForm/WriterForm, middleware guard; login-only, no signup)
+  Testing: vitest ^4.1.11; `pnpm test` -> `vitest run`; unit tests: password, session, session-repo, notes-repo, notes-mapper, uploads, uploads-mime, markdown, live, anim. No e2e (playwright/cypress) or jest.
   Style: TailwindCSS v4 (installed, `@import "tailwindcss"` in global.css). Variables in English, user messages in Spanish, content in Spanish+English via i18n.
-  Persistence: PostgreSQL (external service, env vars), filesystem + Nginx for images, Docker on VPS (DB outside docker-compose).
+  Persistence: PostgreSQL (external service, consumed by src/lib/db.ts via astro:env/server), filesystem uploads (UPLOADS_DIR) + Nginx for images, Docker on VPS (DB outside docker-compose).
   Governance: docs/constitution.md — 6 rules (minimal stack, spec-before-code, layer separation, tests obligatory, external persistence, language rules).
 
 projects:
@@ -52,7 +52,7 @@ rules:
     tdd: false
     test_command: ""
   verify:
-    test_command: ""
+    test_command: "vitest run"
     build_command: "astro build"
     coverage_threshold: 0
   archive:
