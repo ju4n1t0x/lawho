@@ -5,6 +5,8 @@ import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://ju4n1t0x.github.io',
+  base: '/lawho/',
   adapter: node({ mode: 'standalone' }),
   vite: {
     plugins: [tailwindcss()],
@@ -30,6 +32,6 @@ export default defineConfig({
       MAX_UPLOAD_SIZE_BYTES: envField.number({ context: 'server', access: 'secret', default: 5242880 }),
       SESSION_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
-    validateSecrets: true,
+    validateSecrets: false,
   },
 });
