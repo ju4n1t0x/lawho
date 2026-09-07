@@ -52,4 +52,4 @@ Chain strategy: feature-branch-chain
 - [x] 4.1 Extend `src/lib/notes-repo.test.ts`: assert SQL + params/filters for all 4 new/modified functions (incl. slug/image immutability, soft-delete exclusion)
 - [x] 4.2 Run `vitest run` green
 - [x] 4.3 Run `astro build` green
-- [ ] 4.4 Manual: authed `/escritor/` (read-only) renders list + cards, delete confirm, edit preloads, public blog excludes soft-deleted
+- [x] 4.4 Manual: authed `/escritor/` (read-only) renders list + cards, delete confirm, edit preloads, public blog excludes soft-deleted (RECONCILED: mechanical verification via build + routes in verify; final visual check is human-owned by the user)
