@@ -26,6 +26,14 @@ export interface NewNoteInput {
   date?: string;
 }
 
+/** Input for updating a note. Slug and image are never changed. */
+export interface NoteUpdate {
+  title: string;
+  subtitle: string;
+  body: string;
+  tag?: string;
+}
+
 const NOTE_COLUMNS =
   "slug, title, subtitle, body, image_url, date, draft, featured, author, tag";
 
@@ -50,22 +58,24 @@ export function slugify(text: string): string {
 
 /**
  * List all published (non-draft) notes, newest first.
+ * Excludes soft-deleted notes.
  */
 export async function listPublishedNotes(): Promise<NoteRecord[]> {
   const pool = getPool();
   const { rows } = await pool.query<NoteRow>(
-    `SELECT ${NOTE_COLUMNS} FROM notes WHERE draft = false ORDER BY date DESC, id DESC`,
+    `SELECT ${NOTE_COLUMNS} FROM notes WHERE draft = false AND deleted_at IS NULL ORDER BY date DESC, id DESC`,
   );
   return rows.map(toRecord);
 }
 
 /**
  * Fetch a single note by slug, or null when it does not exist.
+ * Excludes soft-deleted notes.
  */
 export async function getNoteBySlug(slug: string): Promise<NoteRecord | null> {
   const pool = getPool();
   const { rows } = await pool.query<NoteRow>(
-    `SELECT ${NOTE_COLUMNS} FROM notes WHERE slug = $1`,
+    `SELECT ${NOTE_COLUMNS} FROM notes WHERE slug = $1 AND deleted_at IS NULL`,
     [slug],
   );
   const row = rows[0];
@@ -111,4 +121,51 @@ export async function createNote(input: NewNoteInput): Promise<NoteRecord> {
   );
 
   return toRecord(rows[0]);
+}
+
+/**
+ * List all notes (including drafts), newest first.
+ * Excludes soft-deleted notes. Used by the writer dashboard.
+ */
+export async function listAllNotesIncludingDrafts(): Promise<NoteRecord[]> {
+  const pool = getPool();
+  const { rows } = await pool.query<NoteRow>(
+    `SELECT ${NOTE_COLUMNS} FROM notes WHERE deleted_at IS NULL ORDER BY date DESC, id DESC`,
+  );
+  return rows.map(toRecord);
+}
+
+/**
+ * Update an existing note by slug. The slug itself and the image are never
+ * changed. Returns the updated record, or null when the note is not found or
+ * soft-deleted.
+ */
+export async function updateNote(
+  slug: string,
+  fields: NoteUpdate,
+): Promise<NoteRecord | null> {
+  const pool = getPool();
+  const { rows } = await pool.query<NoteRow>(
+    `UPDATE notes
+       SET title = $2, subtitle = $3, body = $4, tag = $5, updated_at = now()
+     WHERE slug = $1 AND deleted_at IS NULL
+     RETURNING ${NOTE_COLUMNS}`,
+    [slug, fields.title, fields.subtitle, fields.body, fields.tag ?? null],
+  );
+  const row = rows[0];
+  return row ? toRecord(row) : null;
+}
+
+/**
+ * Soft-delete a note by slug (sets `deleted_at` to now).
+ * Returns `true` when a note was deleted, `false` when not found or already
+ * deleted.
+ */
+export async function softDeleteNote(slug: string): Promise<boolean> {
+  const pool = getPool();
+  const { rowCount } = await pool.query(
+    `UPDATE notes SET deleted_at = now() WHERE slug = $1 AND deleted_at IS NULL`,
+    [slug],
+  );
+  return (rowCount ?? 0) > 0;
 }

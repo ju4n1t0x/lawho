@@ -4,7 +4,15 @@ const { query } = vi.hoisted(() => ({ query: vi.fn() }));
 
 vi.mock("./db", () => ({ getPool: () => ({ query }) }));
 
-import { createNote, getNoteBySlug, listPublishedNotes, slugify } from "./notes-repo";
+import {
+  createNote,
+  getNoteBySlug,
+  listAllNotesIncludingDrafts,
+  listPublishedNotes,
+  slugify,
+  softDeleteNote,
+  updateNote,
+} from "./notes-repo";
 
 const sampleRow = {
   slug: "primer-operativo-2024",
@@ -20,12 +28,15 @@ const sampleRow = {
 };
 
 describe("listPublishedNotes", () => {
-  it("maps rows and filters drafts in SQL", async () => {
+  it("maps rows and filters drafts and soft-deleted in SQL", async () => {
     query.mockResolvedValueOnce({ rows: [sampleRow] });
 
     const notes = await listPublishedNotes();
 
     expect(query).toHaveBeenCalledWith(expect.stringContaining("draft = false"));
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("deleted_at IS NULL"),
+    );
     expect(notes).toHaveLength(1);
     expect(notes[0].slug).toBe("primer-operativo-2024");
     expect(notes[0].data.image).toBe(
@@ -36,14 +47,18 @@ describe("listPublishedNotes", () => {
 });
 
 describe("getNoteBySlug", () => {
-  it("returns a mapped note for an existing slug", async () => {
+  it("returns a mapped note for an existing slug (excludes soft-deleted)", async () => {
     query.mockResolvedValueOnce({ rows: [sampleRow] });
 
     const note = await getNoteBySlug("primer-operativo-2024");
 
-    expect(query).toHaveBeenCalledWith(expect.stringContaining("slug = $1"), [
-      "primer-operativo-2024",
-    ]);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("slug = $1"),
+      ["primer-operativo-2024"],
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("deleted_at IS NULL"),
+    );
     expect(note).not.toBeNull();
     expect(note?.data.title).toBe("Primer operativo");
     expect(note?.data.author).toBe("Equipo LaWho");
@@ -108,5 +123,129 @@ describe("createNote", () => {
     const insertCall = query.mock.calls[1];
     expect(insertCall[1][0]).toMatch(/^primer-operativo-[a-f0-9]{6}$/);
     expect(note.slug).toBe("primer-operativo-2024");
+  });
+});
+
+describe("listAllNotesIncludingDrafts", () => {
+  it("includes drafts and excludes soft-deleted notes, ordered newest first", async () => {
+    query.mockClear();
+    const draftRow = { ...sampleRow, slug: "draft-post", draft: true };
+    query.mockResolvedValueOnce({ rows: [sampleRow, draftRow] });
+
+    const notes = await listAllNotesIncludingDrafts();
+
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("deleted_at IS NULL"),
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.not.stringContaining("draft = false"),
+    );
+    expect(notes).toHaveLength(2);
+    expect(notes[0].slug).toBe("primer-operativo-2024");
+    expect(notes[1].data.draft).toBe(true);
+  });
+
+  it("returns an empty array when no notes exist", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [] });
+
+    const notes = await listAllNotesIncludingDrafts();
+
+    expect(notes).toEqual([]);
+  });
+});
+
+describe("updateNote", () => {
+  it("updates title, subtitle, body, tag and sets updated_at", async () => {
+    query.mockClear();
+    const updatedRow = {
+      ...sampleRow,
+      title: "Nuevo título",
+      subtitle: "Nueva subtítulo",
+    };
+    query.mockResolvedValueOnce({ rows: [updatedRow] });
+
+    const result = await updateNote("primer-operativo-2024", {
+      title: "Nuevo título",
+      subtitle: "Nueva subtítulo",
+      body: "Cuerpo actualizado",
+      tag: "Nueva etiqueta",
+    });
+
+    const updateCall = query.mock.calls[0];
+    expect(updateCall[0]).toContain("SET title = $2");
+    expect(updateCall[0]).toContain("subtitle = $3");
+    expect(updateCall[0]).toContain("body = $4");
+    expect(updateCall[0]).toContain("tag = $5");
+    expect(updateCall[0]).toContain("updated_at = now()");
+    expect(updateCall[0]).toContain("WHERE slug = $1");
+    expect(updateCall[0]).toContain("deleted_at IS NULL");
+    expect(updateCall[0]).not.toContain("SET slug");
+    // image_url must NOT appear in the SET clause (read-only on update)
+    const setClause = updateCall[0].split("SET")[1]?.split("WHERE")[0] ?? "";
+    expect(setClause).not.toContain("image_url");
+    expect(updateCall[1]).toEqual([
+      "primer-operativo-2024",
+      "Nuevo título",
+      "Nueva subtítulo",
+      "Cuerpo actualizado",
+      "Nueva etiqueta",
+    ]);
+    expect(result).not.toBeNull();
+    expect(result?.data.title).toBe("Nuevo título");
+  });
+
+  it("returns null for a non-existent or soft-deleted slug", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [] });
+
+    const result = await updateNote("ghost", {
+      title: "X",
+      subtitle: "Y",
+      body: "Z",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("never changes the slug", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [sampleRow] });
+
+    await updateNote("primer-operativo-2024", {
+      title: "Test",
+      subtitle: "Test",
+      body: "Test",
+    });
+
+    const sql = query.mock.calls[0][0];
+    // SET clause must not reference slug
+    const setClause = sql.split("SET")[1]?.split("WHERE")[0] ?? "";
+    expect(setClause).not.toContain("slug");
+  });
+});
+
+describe("softDeleteNote", () => {
+  it("sets deleted_at and returns true when note exists", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rowCount: 1 });
+
+    const result = await softDeleteNote("primer-operativo-2024");
+
+    const sql = query.mock.calls[0][0];
+    expect(sql).toContain("SET deleted_at = now()");
+    expect(sql).toContain("WHERE slug = $1");
+    expect(sql).toContain("deleted_at IS NULL");
+    expect(query.mock.calls[0][1]).toEqual(["primer-operativo-2024"]);
+    expect(result).toBe(true);
+  });
+
+  it("returns false when note not found or already deleted", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rowCount: 0 });
+
+    const result = await softDeleteNote("ghost");
+
+    expect(result).toBe(false);
   });
 });
