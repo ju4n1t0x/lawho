@@ -2,8 +2,10 @@
 import { SESSION_TTL_MS } from "astro:env/server";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import LoginForm from "../../components/server-islands/LoginForm.astro";
+import WriterNoteCard from "../../components/WriterNoteCard.astro";
 import { checkPassword } from "../../lib/users-repo";
 import { createSession } from "../../lib/session-repo";
+import { listAllNotesIncludingDrafts } from "../../lib/notes-repo";
 import {
   SESSION_COOKIE_NAME,
   generateSessionToken,
@@ -33,13 +35,44 @@ if (Astro.request.method === "POST") {
       token,
       sessionCookieOptions(SESSION_TTL_MS, import.meta.env.PROD),
     );
-    return Astro.redirect("/escritor/nueva");
+    return Astro.redirect("/escritor/");
   }
 }
+
+// Middleware already populates Astro.locals.user when a valid session exists.
+const isAuthenticated = !!Astro.locals.user;
+const notes = isAuthenticated ? await listAllNotesIncludingDrafts() : [];
 ---
 
 <BaseLayout>
-  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-24 md:py-32">
-    <LoginForm server:defer error={error} />
+  <main class="mx-auto min-h-screen max-w-6xl px-4 py-24 md:py-32">
+    {isAuthenticated ? (
+      <div>
+        <div class="mb-8 flex items-center justify-between">
+          <h1 class="font-display text-3xl font-semibold">Mis notas</h1>
+          <a
+            href="/escritor/nueva"
+            class="inline-flex items-center justify-center rounded-full bg-leaf px-6 py-2.5 text-sm font-semibold text-leaf-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-leaf focus-visible:ring-offset-2"
+          >
+            + Crear nota
+          </a>
+        </div>
+        {notes.length === 0 ? (
+          <p class="text-center text-muted-foreground">
+            Todavía no hay notas. Creá la primera con el botón de arriba.
+          </p>
+        ) : (
+          <div class="grid gap-6">
+            {notes.map((note) => (
+              <WriterNoteCard note={note} />
+            ))}
+          </div>
+        )}
+      </div>
+    ) : (
+      <div class="flex justify-center">
+        <LoginForm server:defer error={error} />
+      </div>
+    )}
   </main>
 </BaseLayout>

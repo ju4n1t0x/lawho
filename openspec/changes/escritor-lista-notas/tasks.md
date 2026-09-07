@@ -43,9 +43,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Integration — Dashboard + Card + Login Redirect
 
-- [ ] 3.1 Modify `src/pages/escritor/index.astro` (prerender=false): conditional login form vs dashboard (list `listAllNotesIncludingDrafts()` + green `bg-leaf` "+ Crear nota" → `/escritor/nueva` (read-only))
-- [ ] 3.2 Create `src/components/WriterNoteCard.astro`: horizontal card (image left, tag/title/subtitle), yellow Editar → `/escritor/editar/[slug]` (read-only), red Eliminar form POST → `/escritor/eliminar/[slug]` (read-only) with onsubmit confirm
-- [ ] 3.3 Modify `src/components/server-islands/LoginForm.astro`: successful-login redirect from `/escritor/nueva` (read-only) to `/escritor/` (read-only)
+- [x] 3.1 Modify `src/pages/escritor/index.astro` (prerender=false): conditional login form vs dashboard (list `listAllNotesIncludingDrafts()` + green `bg-leaf` "+ Crear nota" → `/escritor/nueva` (read-only))
+- [x] 3.2 Create `src/components/WriterNoteCard.astro`: horizontal card (image left, tag/title/subtitle), yellow Editar → `/escritor/editar/[slug]` (read-only), red Eliminar form POST → `/escritor/eliminar/[slug]` (read-only) with onsubmit confirm
+- [x] 3.3 Modify `src/components/server-islands/LoginForm.astro`: successful-login redirect from `/escritor/nueva` (read-only) to `/escritor/` (read-only)
 
 ## Phase 4: Verification
 
