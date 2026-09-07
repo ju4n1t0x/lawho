@@ -8,19 +8,25 @@ The `/operativos-de-salud/` page renders a grid of published note miniatures sor
 
 ### Requirement: Blog Index Route
 
-The system MUST serve a page at `/operativos-de-salud/` that displays a grid of published notes.
+The system MUST serve a page at `/operativos-de-salud/` (read-only) that displays a grid of published notes sourced from `getLiveCollection('notes')`. The page MUST be on-demand (`export const prerender = false`).
 
 #### Scenario: Index renders published notes
 
-- GIVEN the `notes` collection contains 3 published notes (draft=false) and 1 draft
-- WHEN a user visits `/operativos-de-salud/`
+- GIVEN the `notes` live collection contains 3 published notes (draft=false) and 1 draft
+- WHEN a user visits `/operativos-de-salud/` (read-only)
 - THEN the page MUST display exactly 3 note cards
 
 #### Scenario: Empty collection
 
-- GIVEN the `notes` collection contains zero entries with draft=false
-- WHEN a user visits `/operativos-de-salud/`
+- GIVEN the `notes` live collection contains zero entries with draft=false
+- WHEN a user visits `/operativos-de-salud/` (read-only)
 - THEN the page MUST render the header and an empty state with no cards
+
+#### Scenario: On-demand rendering
+
+- GIVEN the Astro server is running
+- WHEN a new note is inserted into the DB
+- THEN the next request to `/operativos-de-salud/` (read-only) MUST include the new note without a rebuild
 
 ### Requirement: Sort Order
 
@@ -60,14 +66,14 @@ Each published note MUST render as a `NoteCard` component linking to its detail 
 
 - GIVEN a published note with slug `primer-operativo-2024`
 - WHEN the index renders
-- THEN its card MUST be an `<a>` linking to `/operativos-de-salud/primer-operativo-2024/`
+- THEN its card MUST be an `<a>` linking to `/operativos-de-salud/primer-operativo-2024/` (read-only)
 
 ### Requirement: English Mirror
 
-The system MUST serve an English mirror at `/en/operativos-de-salud/` rendering the same published notes per the i18n fallback convention.
+The system MUST serve an English mirror at `/en/operativos-de-salud/` (read-only) rendering the same published notes per the i18n fallback convention. The mirror MUST also be on-demand (`prerender = false`).
 
 #### Scenario: En mirror renders same content
 
-- GIVEN a user visits `/en/operativos-de-salud/`
+- GIVEN a user visits `/en/operativos-de-salud/` (read-only)
 - WHEN the page loads
 - THEN it MUST display the same published notes as the Spanish index

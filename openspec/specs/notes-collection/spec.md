@@ -8,72 +8,78 @@ Defines the `notes` content collection: schema, loader, and the contract between
 
 ### Requirement: Collection Declaration
 
-The system MUST declare a `notes` collection in `src/content.config.ts` using a `glob` loader over `src/content/notes/**/*.md`.
+The system MUST declare a `notes` live collection in `src/live.config.ts` using `defineLiveCollection` with a `LiveLoader` that reads from PostgreSQL via `src/lib/notes-repo.ts`. The build-time `glob` loader in `src/content.config.ts` MUST be removed for the `notes` collection.
 
-#### Scenario: Collection loads Markdown entries
+#### Scenario: Collection loads from Postgres
 
-- GIVEN the Astro build runs
-- WHEN `getCollection('notes')` is called
-- THEN it MUST return one entry per `.md` file under `src/content/notes/`
+- GIVEN the Astro server is running with a live DB connection
+- WHEN `getLiveCollection('notes')` is called
+- THEN it MUST return one entry per row in the `notes` table
+
+#### Scenario: No build-time glob for notes
+
+- GIVEN `src/content.config.ts` exists
+- WHEN inspected
+- THEN it MUST NOT contain a `notes` collection with a `glob` loader
 
 ### Requirement: Schema Fields
 
-The zod schema MUST declare these fields: `title` (string, MUST), `subtitle` (string, MUST), `image` (image() helper, MUST), `date` (date, MUST), `draft` (boolean, default false, MUST), `featured` (boolean, default true, MUST), `author` (string, SHOULD), `tag` (string, MAY).
+The live collection schema MUST declare these fields: `title` (string, MUST), `subtitle` (string, MUST), `image` (string URL, MUST), `date` (date, MUST), `draft` (boolean, default false, MUST), `featured` (boolean, default true, MUST), `author` (string, SHOULD), `tag` (string, MAY). The `image` field is now a string URL (from `PUBLIC_UPLOADS_URL`) rather than the Astro `image()` helper.
 
 #### Scenario: Required fields validated
 
-- GIVEN a note frontmatter missing `title`
-- WHEN the collection loads
-- THEN the build MUST fail with a schema validation error
+- GIVEN a DB row missing `title`
+- WHEN the live loader maps the row
+- THEN the entry MUST be rejected or the row MUST NOT be inserted without a title
 
 #### Scenario: Optional fields omitted
 
-- GIVEN a note frontmatter without `author` and `tag`
-- WHEN the collection loads
+- GIVEN a DB row without `author` and `tag`
+- WHEN the live loader maps the row
 - THEN the entry MUST load successfully with `author` and `tag` as undefined
 
 #### Scenario: Defaults applied
 
-- GIVEN a note frontmatter without `draft` or `featured`
-- WHEN the collection loads
+- GIVEN a DB row without explicit `draft` or `featured`
+- WHEN the live loader maps the row
 - THEN `draft` MUST be `false` and `featured` MUST be `true`
 
-### Requirement: Image Helper
+### Requirement: Image Field
 
-The `image` field MUST use the Astro `image()` schema helper so images are resolved and optimized at build time.
+The `image` field MUST be a string URL pointing to the public origin (`PUBLIC_UPLOADS_URL` prefix). The Astro `image()` helper is no longer used for this collection.
 
-#### Scenario: Image resolved from frontmatter
+#### Scenario: Image URL from DB
 
-- GIVEN a note with `image: ./images/photo.jpg` in frontmatter
+- GIVEN a note row with `image_url = '/uploads/notes/slug/photo.jpg'`
 - WHEN the entry is loaded
-- THEN `data.image` MUST be an `ImageMetadata` object pointing to the resolved asset
+- THEN `data.image` MUST be the string `'/uploads/notes/slug/photo.jpg'`
 
 ### Requirement: Markdown Body
 
-Each entry MUST provide a Markdown body accessible via `await render(entry)`.
+Each entry MUST provide a Markdown body stored in the DB `body` column, rendered on demand via `context.renderMarkdown(body)` from the live loader context.
 
-#### Scenario: Body renders via Content component
+#### Scenario: Body renders via renderMarkdown
 
-- GIVEN a note entry with Markdown body
-- WHEN `await render(entry)` is called
-- THEN the result MUST include a `Content` component that renders the Markdown body as HTML
+- GIVEN a note entry with Markdown body in the DB
+- WHEN the page renders the body
+- THEN the result MUST be HTML equivalent to rendering the Markdown
 
 ### Requirement: Write-Side Contract Stability
 
-The schema fields and their types MUST remain stable across loader migrations (e.g., future swap from `glob` to a database-backed loader).
+The schema fields and their types MUST remain stable across the loader migration from `glob` to `LiveLoader`.
 
 #### Scenario: Loader swap preserves schema
 
-- GIVEN the `notes` collection is migrated from `glob` to a database-backed loader
+- GIVEN the `notes` collection is migrated from `glob` to a `LiveLoader`
 - WHEN entries are loaded
-- THEN the `data` shape MUST match the current zod schema exactly
+- THEN the `data` shape MUST match the schema exactly
 
 ### Requirement: Seed Note
 
-The system MUST ship at least one seed note (e.g., `primer-operativo-2024.md`) so the blog index and Terreno section render content on first build.
+The system MUST ship at least one seed note as a DB row inserted by `migrations/001-init.sql` (or a seed script) so the blog index renders content on first deploy.
 
-#### Scenario: Seed note present
+#### Scenario: Seed note present after migration
 
-- GIVEN a fresh checkout of the repository
-- WHEN the Astro build runs
-- THEN at least one note entry MUST be returned by `getCollection('notes')`
+- GIVEN a fresh database with migrations applied
+- WHEN `getLiveCollection('notes')` is called
+- THEN at least one note entry MUST be returned
