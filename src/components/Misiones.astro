@@ -1,5 +1,11 @@
 ---
+import { getLiveCollection } from "astro:content";
 import Reveal from "./Reveal.astro";
+import NoteCard from "./NoteCard.astro";
+import { getPublishedNotes } from "../lib/notes";
+
+const result = await getLiveCollection("notes");
+const notes = getPublishedNotes(result.entries ?? [], { featuredOnly: true }).slice(0, 6);
 ---
 
 <section id="misiones" class="mx-auto max-w-6xl px-4 py-24 md:py-32">
@@ -17,8 +23,136 @@ import Reveal from "./Reveal.astro";
     </div>
   </Reveal>
 
-  <p class="text-muted-foreground">
-    Los últimos operativos de salud, crónica a crónica, están disponibles en
-    la bitácora pública.
-  </p>
+  {
+    notes.length === 0 ? (
+      <p class="text-muted-foreground">
+        Todavia no hay operativos publicados. Volvé pronto.
+      </p>
+    ) : (
+      <div
+        class="relative"
+        data-carousel
+        role="region"
+        tabindex="0"
+        aria-label="Carrusel de operativos de salud"
+      >
+        <button
+          data-carousel-prev
+          aria-label="Anterior"
+          class="absolute -left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-card shadow-md transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent max-md:hidden"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+
+        <button
+          data-carousel-next
+          aria-label="Siguiente"
+          class="absolute -right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-card shadow-md transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent max-md:hidden"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <Reveal>
+          <ul
+            data-carousel-track
+            class="scrollbar-none carousel-track flex gap-6 overflow-x-auto px-1 pb-4 pt-2"
+          >
+            {notes.map((note) => (
+              <li class="carousel-card shrink-0 basis-[85%] sm:basis-[45%] md:basis-[32%]">
+                <NoteCard note={note} reveal={false} />
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </div>
+    )
+  }
 </section>
+
+<script>
+  (() => {
+    const KEY = "__lawhoCarousel";
+    const g = window as unknown as Record<string, unknown>;
+    if (g[KEY]) return;
+    g[KEY] = true;
+
+    const prefersReducedMotion = matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    // Import helpers — inlined at build time by Astro/Vite
+    const resolveScrollBehavior = (reduced: boolean): ScrollBehavior =>
+      reduced ? "auto" : "smooth";
+
+    const exceedsDragThreshold = (
+      dx: number,
+      dy: number,
+      threshold = 8,
+    ): boolean => Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy);
+
+    const behavior = resolveScrollBehavior(prefersReducedMotion);
+
+    document.querySelectorAll<HTMLElement>("[data-carousel]").forEach((root) => {
+      const track = root.querySelector<HTMLElement>("[data-carousel-track]");
+      if (!track) return;
+
+      const step = () =>
+        (track.firstElementChild?.getBoundingClientRect().width ?? 0) + 24;
+      const go = (dir: number) =>
+        track.scrollBy({ left: dir * step(), behavior });
+
+      // Chevron buttons
+      root
+        .querySelector<HTMLButtonElement>("[data-carousel-next]")
+        ?.addEventListener("click", () => go(1));
+      root
+        .querySelector<HTMLButtonElement>("[data-carousel-prev]")
+        ?.addEventListener("click", () => go(-1));
+
+      // Keyboard arrows
+      root.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") go(1);
+        else if (e.key === "ArrowLeft") go(-1);
+      });
+
+      // Pointer drag / swipe
+      let startX = 0;
+      let startScroll = 0;
+      let dragging = false;
+
+      track.addEventListener("pointerdown", (e) => {
+        startX = e.clientX;
+        startScroll = track.scrollLeft;
+        dragging = false;
+        track.style.scrollSnapType = "none";
+      });
+
+      track.addEventListener("pointermove", (e) => {
+        if (e.buttons !== 1) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startX;
+        if (!dragging && exceedsDragThreshold(dx, dy)) dragging = true;
+        if (dragging) track.scrollLeft = startScroll - dx;
+      });
+
+      const endDrag = () => {
+        track.style.scrollSnapType = "";
+      };
+      track.addEventListener("pointerup", endDrag);
+      track.addEventListener("pointercancel", endDrag);
+
+      // Suppress click after drag
+      track.addEventListener(
+        "click",
+        (e) => {
+          if (dragging) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragging = false;
+          }
+        },
+        { capture: true },
+      );
+    });
+  })();
+</script>
