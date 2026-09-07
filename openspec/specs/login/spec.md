@@ -2,19 +2,27 @@
 
 ## Purpose
 
-Defines the `/escritor/` (read-only) login page, the `LoginForm` server island, logout route, and authentication flow.
+Defines the `/escritor/` (read-only) login page, the `LoginForm` server island, logout route, and authentication flow. The page conditionally renders the dashboard when authenticated.
 
 ## Requirements
 
 ### Requirement: Login Page Route
 
-The system MUST serve `/escritor/` (read-only) as an on-demand page (`prerender = false`) that mounts a `<LoginForm server:defer />` server island.
+The system MUST serve `/escritor/` (read-only) as an on-demand page (`prerender = false`). When authenticated (`Astro.locals.user` present), the page MUST render the note-list dashboard. When unauthenticated, the page MUST mount a `<LoginForm server:defer />` server island.
 
-#### Scenario: Login page renders
+(Previously: always rendered the LoginForm island)
 
-- GIVEN the server is running
+#### Scenario: Authenticated user sees dashboard
+
+- GIVEN a valid session cookie
 - WHEN a user visits `/escritor/` (read-only)
-- THEN the page MUST load with the LoginForm island placeholder
+- THEN the note-list dashboard MUST be rendered
+
+#### Scenario: Unauthenticated user sees login form
+
+- GIVEN no session cookie
+- WHEN a user visits `/escritor/` (read-only)
+- THEN the LoginForm island MUST be rendered
 
 #### Scenario: On-demand rendering
 
@@ -40,7 +48,9 @@ The `<LoginForm>` component MUST be a server island (`server:defer`) that render
 
 ### Requirement: Login Submission
 
-On form submission, the island MUST verify credentials against the DB via `checkPassword`, create a session, set the session cookie, and redirect to `/escritor/nueva` (read-only).
+On form submission, the island MUST verify credentials against the DB via `checkPassword`, create a session, set the session cookie, and redirect to `/escritor/` (read-only) — the dashboard when logged in.
+
+(Previously: redirected to `/escritor/nueva` (read-only) after login)
 
 #### Scenario: Successful login
 
@@ -48,7 +58,7 @@ On form submission, the island MUST verify credentials against the DB via `check
 - WHEN the island processes the POST
 - THEN a session row MUST be created
 - AND the session cookie MUST be set
-- AND the response MUST redirect to `/escritor/nueva` (read-only)
+- AND the response MUST redirect to `/escritor/` (read-only)
 
 #### Scenario: Wrong password
 
@@ -101,11 +111,19 @@ The system MUST provide a logout route (POST `/escritor/logout` (read-only)) tha
 
 Unauthenticated access to protected `/escritor/**` (read-only) routes (other than `/escritor/` (read-only) itself) MUST redirect to `/escritor/` (read-only).
 
+(Previously: redirected to `/escritor/` (read-only) which always showed login form)
+
 #### Scenario: Unauthenticated redirect
 
 - GIVEN no valid session cookie
 - WHEN a user visits `/escritor/nueva` (read-only)
 - THEN the response MUST redirect to `/escritor/` (read-only)
+
+#### Scenario: Redirect lands on login form
+
+- GIVEN the redirect from an unauthenticated protected route
+- WHEN the user arrives at `/escritor/` (read-only)
+- THEN the login form MUST be displayed (not the dashboard)
 
 ### Requirement: Writer Section Not Indexable
 
