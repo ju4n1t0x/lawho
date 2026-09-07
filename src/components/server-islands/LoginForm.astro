@@ -1,0 +1,89 @@
+---
+import { SESSION_COOKIE_NAME } from "../../lib/session";
+import { getActiveSession } from "../../lib/session-repo";
+
+interface Props {
+  error?: string;
+}
+
+const { error } = Astro.props;
+
+// Server islands run in an isolated request context, so the page middleware
+// does not apply here. Re-check the session cookie in-island to decide
+// whether to show the login form or the authenticated state.
+const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+const session = token ? await getActiveSession(token) : null;
+const isAuthenticated = !!session;
+---
+
+{
+  isAuthenticated ? (
+    <div class="mx-auto max-w-md rounded-[2rem] border border-border bg-card p-8 text-center">
+      <p class="font-display text-xl font-semibold">Sesión iniciada</p>
+      {session && <p class="mt-2 text-sm text-muted-foreground">{session.email}</p>}
+      <form method="POST" action="/escritor/logout" class="mt-6">
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        >
+          Cerrar sesión
+        </button>
+      </form>
+    </div>
+  ) : (
+    <div class="mx-auto max-w-md">
+      <div class="rounded-[2rem] border border-border bg-card p-8">
+        <h1 class="font-display text-2xl font-semibold">Iniciar sesión</h1>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Ingresá con tu correo y contraseña para escribir en la bitácora.
+        </p>
+
+        {error && (
+          <p
+            class="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
+        <form method="POST" action="/escritor/" class="mt-6 grid gap-4">
+          <div class="grid gap-1.5">
+            <label for="email" class="text-sm font-medium">
+              Correo electrónico
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              class="rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="password" class="text-sm font-medium">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              class="rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            Iniciar sesión
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}

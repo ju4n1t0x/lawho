@@ -1,0 +1,45 @@
+---
+import { SESSION_TTL_MS } from "astro:env/server";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import LoginForm from "../../components/server-islands/LoginForm.astro";
+import { checkPassword } from "../../lib/users-repo";
+import { createSession } from "../../lib/session-repo";
+import {
+  SESSION_COOKIE_NAME,
+  generateSessionToken,
+  sessionCookieOptions,
+} from "../../lib/session";
+
+export const prerender = false;
+
+let error: string | undefined;
+
+// Handle the login form POST here. Server islands cannot receive form POSTs:
+// they are fetched via a separate `/_server-islands/*` protocol, so the page
+// owns the credential check, session creation and redirect.
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  const user = await checkPassword(email, password);
+  if (!user) {
+    error = "Credenciales incorrectas";
+  } else {
+    const token = generateSessionToken();
+    await createSession(user.id, token, SESSION_TTL_MS);
+    Astro.cookies.set(
+      SESSION_COOKIE_NAME,
+      token,
+      sessionCookieOptions(SESSION_TTL_MS, import.meta.env.PROD),
+    );
+    return Astro.redirect("/escritor/nueva");
+  }
+}
+---
+
+<BaseLayout>
+  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-24 md:py-32">
+    <LoginForm server:defer error={error} />
+  </main>
+</BaseLayout>
