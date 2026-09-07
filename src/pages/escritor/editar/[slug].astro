@@ -1,0 +1,71 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import WriterForm from "../../../components/server-islands/WriterForm.astro";
+import { getNoteBySlug, updateNote } from "../../../lib/notes-repo";
+import { SESSION_COOKIE_NAME } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/session-repo";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect("/escritor/");
+}
+
+const note = await getNoteBySlug(slug);
+if (!note) {
+  return new Response("Nota no encontrada", { status: 404 });
+}
+
+let error: string | undefined;
+let values = {
+  title: note.data.title,
+  subtitle: note.data.subtitle,
+  body: note.body,
+  tag: note.data.tag ?? "",
+};
+
+if (Astro.request.method === "POST") {
+  const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const session = token ? await getActiveSession(token) : null;
+  if (!session) {
+    return Astro.redirect("/escritor/");
+  }
+
+  const formData = await Astro.request.formData();
+  values = {
+    title: String(formData.get("title") ?? "").trim(),
+    subtitle: String(formData.get("subtitle") ?? "").trim(),
+    body: String(formData.get("body") ?? "").trim(),
+    tag: String(formData.get("tag") ?? "").trim(),
+  };
+
+  if (!values.title || !values.subtitle || !values.body) {
+    error = "Completá el título, el subtítulo y el cuerpo de la nota";
+  } else {
+    const updated = await updateNote(slug, {
+      title: values.title,
+      subtitle: values.subtitle,
+      body: values.body,
+      tag: values.tag || undefined,
+    });
+    if (!updated) {
+      return new Response("Nota no encontrada", { status: 404 });
+    }
+    return Astro.redirect("/escritor/");
+  }
+}
+---
+
+<BaseLayout>
+  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-24 md:py-32">
+    <WriterForm
+      server:defer
+      mode="update"
+      error={error}
+      values={values}
+      imageUrl={note.data.image}
+      actionUrl={`/escritor/editar/${slug}`}
+    />
+  </main>
+</BaseLayout>

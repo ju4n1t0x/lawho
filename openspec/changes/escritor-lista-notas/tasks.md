@@ -37,9 +37,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Core — WriterForm Modes + Edit/Delete Routes
 
-- [ ] 2.1 In `src/components/server-islands/WriterForm.astro` add `mode: 'create'|'update'` prop (default create), preloaded values, action switch, skip image validation/input in update, show existing thumbnail read-only
-- [ ] 2.2 Create `src/pages/escritor/editar/[slug].astro` (prerender=false): session-guarded, load note, render `WriterForm mode="update"` preloaded; 404/Spanish not-found if missing or soft-deleted
-- [ ] 2.3 Create `src/pages/escritor/eliminar/[slug].ts`: POST-only, session-guarded, call `softDeleteNote`, redirect `/escritor/` (read-only)
+- [x] 2.1 In `src/components/server-islands/WriterForm.astro` add `mode: 'create'|'update'` prop (default create), preloaded values, action switch, skip image validation/input in update, show existing thumbnail read-only
+- [x] 2.2 Create `src/pages/escritor/editar/[slug].astro` (prerender=false): session-guarded, load note, render `WriterForm mode="update"` preloaded; 404/Spanish not-found if missing or soft-deleted
+- [x] 2.3 Create `src/pages/escritor/eliminar/[slug].ts`: POST-only, session-guarded, call `softDeleteNote`, redirect `/escritor/` (read-only)
 
 ## Phase 3: Integration — Dashboard + Card + Login Redirect
 

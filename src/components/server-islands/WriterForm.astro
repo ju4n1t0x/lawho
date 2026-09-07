@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME } from "../../lib/session";
 import { getActiveSessionAndTouch } from "../../lib/session-repo";
 
 interface Props {
+  mode?: "create" | "update";
   error?: string;
   values?: {
     title?: string;
@@ -11,9 +12,14 @@ interface Props {
     body?: string;
     tag?: string;
   };
+  /** Existing image URL — shown read-only in update mode. */
+  imageUrl?: string;
+  /** Form action URL — required in update mode (server islands cannot read page URL). */
+  actionUrl?: string;
 }
 
-const { error, values } = Astro.props;
+const { mode = "create", error, values, imageUrl, actionUrl } = Astro.props;
+const isUpdate = mode === "update";
 
 // Server islands run in an isolated request context, so the page middleware
 // does not apply here. Re-check the session cookie in-island and hide the form
@@ -43,9 +49,13 @@ const inputClass =
   ) : (
     <div class="mx-auto w-full max-w-2xl">
       <div class="rounded-[2rem] border border-border bg-card p-8">
-        <h1 class="font-display text-2xl font-semibold">Nueva nota</h1>
+        <h1 class="font-display text-2xl font-semibold">
+          {isUpdate ? "Editar nota" : "Nueva nota"}
+        </h1>
         <p class="mt-2 text-sm text-muted-foreground">
-          Escribí una crónica del terreno. El cuerpo acepta Markdown.
+          {isUpdate
+            ? "Editá los datos de la nota. El cuerpo acepta Markdown."
+            : "Escribí una crónica del terreno. El cuerpo acepta Markdown."}
         </p>
 
         {error && (
@@ -59,8 +69,8 @@ const inputClass =
 
         <form
           method="POST"
-          action="/escritor/nueva"
-          enctype="multipart/form-data"
+          action={isUpdate ? (actionUrl ?? "/escritor/") : "/escritor/nueva"}
+          enctype={isUpdate ? undefined : "multipart/form-data"}
           class="mt-6 grid gap-4"
         >
           <div class="grid gap-1.5">
@@ -119,24 +129,35 @@ const inputClass =
             />
           </div>
 
-          <div class="grid gap-1.5">
-            <label for="image" class="text-sm font-medium">
-              Imagen (opcional, JPG/PNG/WebP, máx. 5MB)
-            </label>
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
-            />
-          </div>
+          {isUpdate && imageUrl ? (
+            <div class="grid gap-1.5">
+              <label class="text-sm font-medium">Imagen actual</label>
+              <img
+                src={imageUrl}
+                alt="Imagen de la nota"
+                class="h-40 w-full rounded-lg object-cover"
+              />
+            </div>
+          ) : !isUpdate ? (
+            <div class="grid gap-1.5">
+              <label for="image" class="text-sm font-medium">
+                Imagen (opcional, JPG/PNG/WebP, máx. 5MB)
+              </label>
+              <input
+                id="image"
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
+              />
+            </div>
+          ) : null}
 
           <button
             type="submit"
             class="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
-            Publicar
+            {isUpdate ? "Guardar" : "Publicar"}
           </button>
         </form>
       </div>
