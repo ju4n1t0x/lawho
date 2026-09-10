@@ -6,6 +6,7 @@
    - `pg` — cliente PostgreSQL para la persistencia externa (regla 5).
    - `argon2` — hash de contraseñas con argon2id.
    - `@astrojs/markdown-satteri` — pipeline de Markdown first-party de Astro para renderizar el cuerpo de las notas a HTML en la colección live.
+   - `sharp` — motor nativo de imágenes requerido por el pipeline `astro:assets` (`<Image>`) en build; pnpm no expone la optionalDependency de Astro a nivel proyecto.
 2. **Spec antes que código**: leer `docs/constitution.md` y la spec activa antes de tocar código; no añadir dependencias ni cambiar formatos sin actualizar antes la spec.
 3. **Separación de capas**: pages (rutas), layouts (estructura), components (UI), content collections (contenido editorial), server islands (autenticación y escritura).
 4. **Tests obligatorios**: solo se suma biblioteca para tests; al terminar cada tarea se ejecutan y se confirma que pasan.
