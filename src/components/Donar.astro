@@ -1,4 +1,5 @@
 ---
+import { Image } from "astro:assets";
 import Reveal from "./Reveal.astro";
 import heroManos from "../assets/hero-manos.jpg";
 
@@ -13,12 +14,12 @@ const aportes = [
 
 <section id="donar" class="px-4 pb-24">
   <div class="relative mx-auto max-w-6xl overflow-hidden rounded-[3rem]">
-    <img
-      src={heroManos.src}
+    <Image
+      src={heroManos}
       alt="Médica voluntaria tomando la mano de una paciente durante una jornada sanitaria"
-      loading="lazy"
       width={1600}
       height={1000}
+      loading="lazy"
       class="absolute inset-0 size-full object-cover"
     />
     <div

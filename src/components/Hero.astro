@@ -1,22 +1,29 @@
 ---
+import { Image } from "astro:assets";
 import CountUp from "./CountUp.astro";
-import heroNinos from "../assets/ninos-esperanza.jpg";
+import heroNinos from "../assets/ninos-esperanza.avif";
 ---
 
 <section class="relative px-4 pt-10 pb-16 md:pt-16">
   <div
-    class="pointer-events-none absolute -left-24 top-10 -z-10 size-[26rem] animate-drift rounded-full bg-sun/40 blur-3xl"
-  ></div>
+    class="pointer-events-none absolute -left-24 top-10 -z-10 size-104 animate-drift rounded-full bg-sun/40 blur-3xl"
+  >
+  </div>
   <div
-    class="pointer-events-none absolute -right-20 top-52 -z-10 size-[22rem] animate-drift rounded-full bg-accent/20 blur-3xl [animation-delay:-6s]"
-  ></div>
+    class="pointer-events-none absolute -right-20 top-52 -z-10 size-88 animate-drift rounded-full bg-accent/20 blur-3xl [animation-delay:-6s]"
+  >
+  </div>
 
-  <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
+  <div
+    class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_1fr]"
+  >
     <div class="animate-fade-up">
       <span
         class="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-card px-4 py-2 text-xs font-semibold uppercase tracking-widest text-accent"
       >
-        <span class="inline-block size-2 animate-heartbeat rounded-full bg-accent"></span>
+        <span
+          class="inline-block size-2 animate-heartbeat rounded-full bg-accent"
+        ></span>
         Chaco Salteño &middot; Salta, Argentina
       </span>
       <h1
@@ -25,22 +32,28 @@ import heroNinos from "../assets/ninos-esperanza.jpg";
         En wichí, lawho significa{" "}
         <span class="relative inline-block text-accent">
           flor
-          <svg viewBox="0 0 300 16" aria-hidden="true" class="absolute -bottom-1 left-0 w-full text-sun">
+          <svg
+            viewBox="0 0 300 16"
+            aria-hidden="true"
+            class="absolute -bottom-1 left-0 w-full text-sun"
+          >
             <path
               d="M2 11C60 3 120 3 180 8s90 6 118 1"
               fill="none"
               stroke="currentColor"
               stroke-width="6"
-              stroke-linecap="round"
-            ></path>
+              stroke-linecap="round"></path>
           </svg>
         </span>{" "}
         : florecer pese a todo.
       </h1>
-      <p class="mt-7 max-w-[54ch] text-pretty text-lg leading-relaxed text-muted-foreground">
-        Somos una asociación civil de médicos, voluntarios y colaboradores que realizamos operativos
-        de salud ad honorem en comunidades de pueblos originarios del norte argentino, sin fines
-        políticos ni religiosos y con profundo respeto por su cultura, creencias y costumbres.
+      <p
+        class="mt-7 max-w-[54ch] text-pretty text-lg leading-relaxed text-muted-foreground"
+      >
+        Somos un grupo de médicos, voluntarios y colaboradores que realizamos
+        operativos de salud ad honorem en comunidades de pueblos originarios del
+        norte argentino, sin fines políticos ni religiosos y con profundo
+        respeto por su cultura, creencias y costumbres.
       </p>
 
       <div class="mt-9 flex flex-wrap items-center gap-3">
@@ -60,13 +73,16 @@ import heroNinos from "../assets/ninos-esperanza.jpg";
     </div>
 
     <div class="relative">
-      <div class="photo-zoom overflow-hidden rounded-[2.5rem] rounded-tr-[6rem]">
-        <img
-          src={heroNinos.src}
+      <div
+        class="photo-zoom overflow-hidden rounded-[2.5rem] rounded-tr-[6rem]"
+      >
+        <Image
+          src={heroNinos}
           alt="Niñas y niños de una comunidad originaria del norte argentino corriendo y riendo"
           width={1408}
           height={1008}
-          class="aspect-[5/4] w-full animate-slow-zoom object-cover"
+          loading="eager"
+          class="aspect-5/4 w-full animate-slow-zoom object-cover"
         />
       </div>
       <div
