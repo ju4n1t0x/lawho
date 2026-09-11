@@ -18,23 +18,24 @@ The system MUST serve `/escritor/nueva` (read-only) as an on-demand page (`prere
 
 ### Requirement: WriterForm Server Island
 
-The `<WriterForm>` MUST be a server island (`server:defer`) that accepts a `mode` prop: `'create'` (default) or `'update'`. In `create` mode it renders an empty multipart form. In `update` mode it preloads the existing note's data into the form fields and switches its action to update the existing note instead of creating a new one. The form MUST contain fields: title (text, required), subtitle (text, required), body (textarea, required, Markdown), tag (text, optional), image (file, optional in create mode, read-only in update mode).
+The `<WriterForm>` MUST be a server island (`server:defer`) accepting `mode: 'create' | 'update'`. Both modes MUST render a multipart form (`enctype="multipart/form-data"`) with an image file input (`accept="image/jpeg,image/png"`, label "JPG/PNG, máx. 5MB"). In create mode the image is required; in update mode it is optional and replaces the existing image. Fields: title (required), subtitle (required), body (Markdown, required), tag (optional).
 
-(Previously: only supported create mode with no preloading)
+(Previously: image optional in create, read-only in update with no file input)
 
-#### Scenario: Create mode renders empty form
+#### Scenario: Create mode renders form with required image input
 
-- GIVEN the island renders with `mode="create"` (or no mode prop)
+- GIVEN the island renders with `mode="create"`
 - WHEN inspecting the HTML
-- THEN all input fields MUST be empty
+- THEN the form MUST have `enctype="multipart/form-data"`
+- AND an image file input MUST be present with `accept="image/jpeg,image/png"`
+
+#### Scenario: Update mode renders form with replaceable image input
+
+- GIVEN the island renders with `mode="update"` with existing image
+- WHEN inspecting the HTML
+- THEN the existing image preview MUST display
+- AND a file input MUST be present for replacement
 - AND the form MUST have `enctype="multipart/form-data"`
-
-#### Scenario: Update mode renders preloaded form
-
-- GIVEN the island renders with `mode="update"` and note data `{ title: 'Post', subtitle: 'Sub', body: 'content', tag: 'salud' }`
-- WHEN inspecting the HTML
-- THEN title, subtitle, body, and tag inputs MUST be pre-filled with the provided values
-- AND the image field MUST be read-only (existing image shown, no file input)
 
 #### Scenario: Spanish UI
 
@@ -60,74 +61,79 @@ The island MUST verify the session cookie internally. If no valid session exists
 
 ### Requirement: Server-Side Validation
 
-On form submission, the island MUST validate: title is non-empty, subtitle is non-empty, body is non-empty, image (if present in create mode) is ≤5MB and passes magic-byte MIME sniff (jpeg/png/webp). In update mode, image validation is skipped since image is read-only.
+On submit, the island MUST validate title, subtitle, body are non-empty. Create mode: image MUST be present, ≤5MB, jpeg/png MIME. Update mode: if new image provided it MUST be ≤5MB and valid MIME; if no file, skip image checks.
 
-(Previously: always validated image regardless of mode)
+(Previously: image optional in create, skipped entirely in update)
 
-#### Scenario: Valid submission accepted
+#### Scenario: Create without image rejected
 
-- GIVEN all required fields filled and a valid image (create mode)
-- WHEN the form is submitted
+- GIVEN create mode with no image file
+- WHEN submitted
+- THEN a Spanish error MUST indicate image is required
+
+#### Scenario: Update with new valid image accepted
+
+- GIVEN update mode with a new valid image file
+- WHEN submitted
 - THEN validation MUST pass
 
-#### Scenario: Update mode skips image validation
+#### Scenario: Update without new image accepted
 
-- GIVEN the form in update mode
-- WHEN the form is submitted without an image file
+- GIVEN update mode with no new image file
+- WHEN submitted
 - THEN validation MUST pass without image checks
-
-#### Scenario: Missing required field
-
-- GIVEN title is empty
-- WHEN the form is submitted
-- THEN a Spanish validation error MUST be displayed
 
 #### Scenario: Oversized image rejected
 
-- GIVEN an image file > 5MB in create mode
-- WHEN the form is submitted
-- THEN a Spanish error MUST be displayed (e.g., "La imagen no debe superar 5MB")
+- GIVEN an image file > 5MB
+- WHEN submitted
+- THEN a Spanish error MUST display
 
 #### Scenario: Invalid MIME rejected
 
-- GIVEN an image file that is not jpeg/png/webp (magic bytes mismatch) in create mode
-- WHEN the form is submitted
-- THEN a Spanish error MUST be displayed (e.g., "Formato de imagen no permitido")
+- GIVEN a non-jpeg/png file (magic bytes mismatch)
+- WHEN submitted
+- THEN a Spanish error MUST display
 
 ### Requirement: Publish to Database
 
-On successful validation in create mode, the island MUST insert a new row into the `notes` table and redirect to the public note URL. In update mode, the island MUST call `updateNote` with the submitted data (excluding image) and redirect to `/escritor/` (read-only).
+Create mode: insert new row with image URL, redirect to `/operativos-de-salud/<slug>/`. Update mode: call `updateNote` INCLUDING `imageUrl` when a new image was uploaded, redirect to `/escritor/`. Slug MUST NOT change.
 
-(Previously: only created new notes)
+(Previously: update excluded `image_url` from SET clause)
 
-#### Scenario: Note published (create mode)
+#### Scenario: Note created with image
 
-- GIVEN a valid form submission in create mode
-- WHEN the island processes it
-- THEN a new row MUST be inserted into `notes`
-- AND the response MUST redirect to `/operativos-de-salud/<slug>/` (read-only)
+- GIVEN valid create submission with image
+- WHEN processed
+- THEN a new row MUST be inserted with the image public URL
 
-#### Scenario: Note updated (update mode)
+#### Scenario: Note updated with new image
 
-- GIVEN a valid form submission in update mode for slug `mi-post`
-- WHEN the island processes it
-- THEN `updateNote('mi-post', ...)` MUST be called with the submitted fields
-- AND the response MUST redirect to `/escritor/` (read-only)
-- AND the slug MUST NOT change
+- GIVEN valid update submission with new image
+- WHEN processed
+- THEN `updateNote` MUST be called with the new `imageUrl`
+
+#### Scenario: Note updated without image change
+
+- GIVEN valid update submission without new image
+- WHEN processed
+- THEN `updateNote` MUST retain the existing `imageUrl`
 
 ### Requirement: Image Attachment
 
-If an image is uploaded, it MUST be saved via the image-upload capability and the public URL stored in the note's `image` field.
+Every note MUST have an image. Create requires an image file. Edit replaces when new file provided, retains when none provided. There MUST NOT be any "quitar imagen" affordance — a note can never be imageless.
 
-#### Scenario: Image saved and linked
+(Previously: image optional; no remove action existed but absence was permitted)
 
-- GIVEN a valid image upload
-- WHEN the note is published
-- THEN the image MUST be stored on disk
-- AND the note row `image` field MUST contain the public URL
+#### Scenario: No remove-image action exists
 
-#### Scenario: No image
+- GIVEN the WriterForm in any mode
+- WHEN inspecting the UI
+- THEN there MUST NOT be any button or control to remove the existing image
 
-- GIVEN no image file in the form
-- WHEN the note is published
-- THEN the note MUST be created; `image` MAY use a default or be empty per schema
+#### Scenario: Image replaced on edit
+
+- GIVEN a note with an image and a new upload in edit mode
+- WHEN the note is updated
+- THEN the new image MUST replace the old on disk
+- AND the old file MUST be unlinked after DB write

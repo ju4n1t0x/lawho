@@ -60,8 +60,8 @@ Chain strategy: pending
 
 ## Phase 7: Commit
 
-- [ ] 7.1 Work-unit commits (conventional): optimize → MIME → uploads → repo → form/handlers; tests with code.
-- [ ] 7.2 Spec-deltas planning-only; canonical specs synced at archive.
+- [x] 7.1 Delivered as single commit `d75eeeb` under maintainer-approved `size:exception` (single-pr strategy); the work-unit commit split was superseded by that approved strategy.
+- [x] 7.2 Spec-deltas planning-only; canonical specs synced at archive — completed by `sdd-archive` on 2026-09-10.
 
 ## Phase 8: Corrective — extract testable edit-flow logic
 
