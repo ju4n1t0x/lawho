@@ -181,7 +181,7 @@ describe("updateNote", () => {
     expect(updateCall[0]).toContain("WHERE slug = $1");
     expect(updateCall[0]).toContain("deleted_at IS NULL");
     expect(updateCall[0]).not.toContain("SET slug");
-    // image_url must NOT appear in the SET clause (read-only on update)
+    // image_url must NOT appear in SET clause when omitted (retain existing)
     const setClause = updateCall[0].split("SET")[1]?.split("WHERE")[0] ?? "";
     expect(setClause).not.toContain("image_url");
     expect(updateCall[1]).toEqual([
@@ -193,6 +193,41 @@ describe("updateNote", () => {
     ]);
     expect(result).not.toBeNull();
     expect(result?.data.title).toBe("Nuevo título");
+  });
+
+  it("includes image_url in SET clause when imageUrl is provided", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [sampleRow] });
+
+    await updateNote("primer-operativo-2024", {
+      title: "Test",
+      subtitle: "Test",
+      body: "Test",
+      imageUrl: "/uploads/notes/slug/new-foto.jpg",
+    });
+
+    const updateCall = query.mock.calls[0];
+    const setClause = updateCall[0].split("SET")[1]?.split("WHERE")[0] ?? "";
+    expect(setClause).toContain("image_url = $6");
+    // imageUrl should be the 6th param (index 5)
+    expect(updateCall[1][5]).toBe("/uploads/notes/slug/new-foto.jpg");
+    expect(updateCall[1]).toHaveLength(6);
+  });
+
+  it("omits image_url from SET clause when imageUrl is omitted (retain existing)", async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [sampleRow] });
+
+    await updateNote("primer-operativo-2024", {
+      title: "Test",
+      subtitle: "Test",
+      body: "Test",
+    });
+
+    const updateCall = query.mock.calls[0];
+    const setClause = updateCall[0].split("SET")[1]?.split("WHERE")[0] ?? "";
+    expect(setClause).not.toContain("image_url");
+    expect(updateCall[1]).toHaveLength(5);
   });
 
   it("returns null for a non-existent or soft-deleted slug", async () => {

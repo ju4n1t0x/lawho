@@ -12,7 +12,7 @@ interface Props {
     body?: string;
     tag?: string;
   };
-  /** Existing image URL — shown read-only in update mode. */
+  /** Existing image URL — shown as preview in update mode. */
   imageUrl?: string;
   /** Form action URL — required in update mode (server islands cannot read page URL). */
   actionUrl?: string;
@@ -70,7 +70,7 @@ const inputClass =
         <form
           method="POST"
           action={isUpdate ? (actionUrl ?? "/escritor/") : "/escritor/nueva"}
-          enctype={isUpdate ? undefined : "multipart/form-data"}
+          enctype="multipart/form-data"
           class="mt-6 grid gap-4"
         >
           <div class="grid gap-1.5">
@@ -138,20 +138,21 @@ const inputClass =
                 class="h-40 w-full rounded-lg object-cover"
               />
             </div>
-          ) : !isUpdate ? (
-            <div class="grid gap-1.5">
-              <label for="image" class="text-sm font-medium">
-                Imagen (opcional, JPG/PNG/WebP, máx. 5MB)
-              </label>
-              <input
-                id="image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
-              />
-            </div>
           ) : null}
+
+          <div class="grid gap-1.5">
+            <label for="image" class="text-sm font-medium">
+              Imagen (JPG/PNG, máx. 5MB)
+            </label>
+            <input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png"
+              required={!isUpdate}
+              class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
+            />
+          </div>
 
           <button
             type="submit"

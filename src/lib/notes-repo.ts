@@ -26,12 +26,14 @@ export interface NewNoteInput {
   date?: string;
 }
 
-/** Input for updating a note. Slug and image are never changed. */
+/** Input for updating a note. Slug is never changed. Image is updated only when `imageUrl` is provided. */
 export interface NoteUpdate {
   title: string;
   subtitle: string;
   body: string;
   tag?: string;
+  /** When provided, updates `image_url` in the DB. When omitted, retains existing value. */
+  imageUrl?: string;
 }
 
 const NOTE_COLUMNS =
@@ -136,21 +138,36 @@ export async function listAllNotesIncludingDrafts(): Promise<NoteRecord[]> {
 }
 
 /**
- * Update an existing note by slug. The slug itself and the image are never
- * changed. Returns the updated record, or null when the note is not found or
- * soft-deleted.
+ * Update an existing note by slug. The slug itself is never changed.
+ * When `imageUrl` is provided, `image_url` is updated; otherwise the existing
+ * value is retained. Returns the updated record, or null when the note is not
+ * found or soft-deleted.
  */
 export async function updateNote(
   slug: string,
   fields: NoteUpdate,
 ): Promise<NoteRecord | null> {
   const pool = getPool();
+  const params: unknown[] = [
+    slug,
+    fields.title,
+    fields.subtitle,
+    fields.body,
+    fields.tag ?? null,
+  ];
+
+  let setClause = "title = $2, subtitle = $3, body = $4, tag = $5, updated_at = now()";
+  if (fields.imageUrl !== undefined) {
+    params.push(fields.imageUrl);
+    setClause += `, image_url = $${params.length}`;
+  }
+
   const { rows } = await pool.query<NoteRow>(
     `UPDATE notes
-       SET title = $2, subtitle = $3, body = $4, tag = $5, updated_at = now()
+       SET ${setClause}
      WHERE slug = $1 AND deleted_at IS NULL
      RETURNING ${NOTE_COLUMNS}`,
-    [slug, fields.title, fields.subtitle, fields.body, fields.tag ?? null],
+    params,
   );
   const row = rows[0];
   return row ? toRecord(row) : null;

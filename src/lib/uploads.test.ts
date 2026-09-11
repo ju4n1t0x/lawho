@@ -1,16 +1,30 @@
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  absolutePathFromPublicUrl,
   assertWithinSizeLimit,
   buildUniqueFilename,
   DEFAULT_MAX_UPLOAD_SIZE_BYTES,
+  resolveNoteImageReplacement,
   sanitizeFilename,
   saveImageUpload,
   UploadValidationError,
 } from "./uploads";
+
+// ── Mock image-optimize ─────────────────────────────────────────────────────
+// The optimizeImage mock passes through bytes unchanged (preserving the
+// synthetic headers used by existing tests) and returns the same mime.
+vi.mock("./image-optimize", () => ({
+  optimizeImage: vi.fn(async (bytes: Uint8Array, mime: string) => ({
+    bytes,
+    mime,
+  })),
+}));
+
+import { optimizeImage } from "./image-optimize";
 
 /** Minimal valid PNG bytes used to build test `File` objects. */
 const PNG_HEADER = new Uint8Array([
@@ -86,6 +100,102 @@ describe("assertWithinSizeLimit", () => {
   });
 });
 
+describe("absolutePathFromPublicUrl", () => {
+  const config = { uploadsDir: "/data/uploads", publicUploadsUrl: "/uploads" };
+
+  it("returns absolute path for a matching URL", () => {
+    expect(absolutePathFromPublicUrl("/uploads/notes/slug/foto.jpg", config)).toBe(
+      path.join("/data/uploads", "notes/slug/foto.jpg"),
+    );
+  });
+
+  it("returns null when prefix does not match", () => {
+    expect(absolutePathFromPublicUrl("https://cdn.example.com/uploads/x.jpg", config)).toBeNull();
+  });
+
+  it("returns null when path contains ..", () => {
+    expect(absolutePathFromPublicUrl("/uploads/../../etc/passwd", config)).toBeNull();
+  });
+
+  it("handles trailing slash on publicUploadsUrl", () => {
+    const cfg = { uploadsDir: "/data/uploads", publicUploadsUrl: "/uploads/" };
+    expect(absolutePathFromPublicUrl("/uploads/notes/slug/foto.jpg", cfg)).toBe(
+      path.join("/data/uploads", "notes/slug/foto.jpg"),
+    );
+  });
+});
+
+describe("resolveNoteImageReplacement", () => {
+  const config = { uploadsDir: "/data/uploads", publicUploadsUrl: "/uploads" };
+
+  it("retains existing image when no new upload is provided", () => {
+    const result = resolveNoteImageReplacement({
+      currentPublicUrl: "/uploads/notes/slug/foto.jpg",
+      hasNewUpload: false,
+      newPublicUrl: "",
+      config,
+    });
+    expect(result.persistNewUrl).toBe(false);
+    expect(result.imageUrl).toBeUndefined();
+    expect(result.oldAbsolutePath).toBeNull();
+    expect(result.rejectMessage).toBeNull();
+  });
+
+  it("persists new URL and computes old absolute path on replacement", () => {
+    const result = resolveNoteImageReplacement({
+      currentPublicUrl: "/uploads/notes/slug/old.jpg",
+      hasNewUpload: true,
+      newPublicUrl: "/uploads/notes/slug/new.png",
+      config,
+    });
+    expect(result.persistNewUrl).toBe(true);
+    expect(result.imageUrl).toBe("/uploads/notes/slug/new.png");
+    expect(result.oldAbsolutePath).toBe(
+      path.join("/data/uploads", "notes/slug/old.jpg"),
+    );
+    expect(result.rejectMessage).toBeNull();
+  });
+
+  it("sets oldAbsolutePath to null when old URL prefix does not match", () => {
+    const result = resolveNoteImageReplacement({
+      currentPublicUrl: "https://cdn.example.com/other/foto.jpg",
+      hasNewUpload: true,
+      newPublicUrl: "/uploads/notes/slug/new.png",
+      config,
+    });
+    expect(result.persistNewUrl).toBe(true);
+    expect(result.imageUrl).toBe("/uploads/notes/slug/new.png");
+    expect(result.oldAbsolutePath).toBeNull();
+    expect(result.rejectMessage).toBeNull();
+  });
+
+  it("does not unlink when new URL equals current URL", () => {
+    const result = resolveNoteImageReplacement({
+      currentPublicUrl: "/uploads/notes/slug/foto.jpg",
+      hasNewUpload: true,
+      newPublicUrl: "/uploads/notes/slug/foto.jpg",
+      config,
+    });
+    expect(result.persistNewUrl).toBe(true);
+    expect(result.imageUrl).toBe("/uploads/notes/slug/foto.jpg");
+    expect(result.oldAbsolutePath).toBeNull();
+    expect(result.rejectMessage).toBeNull();
+  });
+
+  it("rejects legacy imageless note without new upload", () => {
+    const result = resolveNoteImageReplacement({
+      currentPublicUrl: "",
+      hasNewUpload: false,
+      newPublicUrl: "",
+      config,
+    });
+    expect(result.persistNewUrl).toBe(false);
+    expect(result.imageUrl).toBeUndefined();
+    expect(result.oldAbsolutePath).toBeNull();
+    expect(result.rejectMessage).toBe("La imagen es obligatoria");
+  });
+});
+
 describe("saveImageUpload", () => {
   let dir: string;
 
@@ -101,7 +211,7 @@ describe("saveImageUpload", () => {
         publicUploadsUrl: "/uploads",
       });
 
-      expect(result.relativePath).toMatch(/^notes\/mi-nota\/mifoto-[a-f0-9]+\.jpg$/);
+      expect(result.relativePath).toMatch(/^notes\/mi-nota\/mifoto-[a-f0-9]+\.png$/);
       expect(result.publicUrl).toBe(`/uploads/${result.relativePath}`);
       expect(result.publicUrl).not.toContain(dir);
 
@@ -157,7 +267,7 @@ describe("saveImageUpload", () => {
     }
   });
 
-  it("rejects an oversized file with a Spanish error", async () => {
+  it("rejects an oversized file with a Spanish error (before optimize)", async () => {
     dir = await makeTempDir();
     try {
       const oversized = makeFile(JPEG_BODY, "grande.jpg");
@@ -169,6 +279,46 @@ describe("saveImageUpload", () => {
         }),
       ).rejects.toThrow("La imagen no debe superar");
     } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects non-image bytes before optimization (sniff gate)", async () => {
+    dir = await makeTempDir();
+    try {
+      // Non-image bytes → sniff returns null → rejected with Spanish message
+      const nonImage = makeFile(
+        new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]),
+        "data.bin",
+      );
+      await expect(
+        saveImageUpload(nonImage, "slug", { uploadsDir: dir, publicUploadsUrl: "/uploads" }),
+      ).rejects.toThrow("Formato de imagen no permitido");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("wraps sharp errors as UploadValidationError with Spanish message", async () => {
+    dir = await makeTempDir();
+    vi.mocked(optimizeImage).mockRejectedValueOnce(new Error("sharp: something broke"));
+    try {
+      const result = await saveImageUpload(pngFile(), "slug", {
+        uploadsDir: dir,
+        publicUploadsUrl: "/uploads",
+      });
+      // If optimizeImage throws, saveImageUpload wraps it
+      // But since mock is reset after this test, let's verify the behavior:
+      // Actually the mock is set to reject, so we should get an error
+      // But the file was written first — wait, no, optimize is called before writeFile.
+      // Let me re-check: optimize is called, throws, wrap catches, re-throws as UploadValidationError.
+      // The test should work as-is if optimize throws first.
+      expect.fail("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(UploadValidationError);
+      expect((e as Error).message).toBe("La imagen no se pudo procesar");
+    } finally {
+      vi.mocked(optimizeImage).mockReset();
       await rm(dir, { recursive: true, force: true });
     }
   });

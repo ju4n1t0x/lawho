@@ -35,8 +35,8 @@ describe("sniffImageMime", () => {
     expect(sniffImageMime(PNG)).toBe("image/png");
   });
 
-  it("accepts a real WebP header", () => {
-    expect(sniffImageMime(WEBP)).toBe("image/webp");
+  it("rejects WebP (no longer accepted)", () => {
+    expect(sniffImageMime(WEBP)).toBeNull();
   });
 
   it("rejects a GIF disguised as .jpg regardless of extension", () => {
@@ -50,12 +50,5 @@ describe("sniffImageMime", () => {
   it("rejects bytes that are too short to carry a signature", () => {
     expect(sniffImageMime(new Uint8Array([0xff, 0xd8]))).toBeNull();
     expect(sniffImageMime(new Uint8Array([]))).toBeNull();
-  });
-
-  it("rejects a RIFF file whose payload is not WEBP", () => {
-    const riffNotWebp = new Uint8Array([
-      0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x41, 0x56, 0x49, 0x20,
-    ]);
-    expect(sniffImageMime(riffNotWebp)).toBeNull();
   });
 });
