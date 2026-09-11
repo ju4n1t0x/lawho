@@ -42,4 +42,4 @@ Chain strategy: pending
 
 ## Phase 3: Commit (work unit)
 
-- [ ] 3.1 One atomic commit to `dev` per repo workflow (tests green before commit): `refactor(images): migrate static <img> to Astro <Image> in hero/historia/infancias/donar`
+- [x] 3.1 One atomic commit to `dev` per repo workflow (tests green before commit): `refactor(images): migrate static <img> to Astro <Image> in hero/historia/infancias/donar`
