@@ -5,8 +5,8 @@ import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
-  //site: 'https://ju4n1t0x.github.io',
-  //base: '/lawho/',
+  site: 'https://ju4n1t0x.github.io',
+  base: '/lawho/',
   adapter: node({ mode: 'standalone' }),
   vite: {
     plugins: [tailwindcss()],
