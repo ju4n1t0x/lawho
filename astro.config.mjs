@@ -5,9 +5,9 @@ import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://ju4n1t0x.github.io',
-  base: '/lawho/',
-  //adapter: node({ mode: 'standalone' }),
+  // Producción: servir desde la raíz sin prefijo de ruta.
+  // (El preview de GitHub Pages usaba site/base específicos; ya no aplican.)
+  adapter: node({ mode: 'standalone' }),
   vite: {
     plugins: [tailwindcss()],
   },
