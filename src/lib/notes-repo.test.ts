@@ -12,6 +12,8 @@ import {
   slugify,
   softDeleteNote,
   updateNote,
+  findManagedImage,
+  isImageReferenced,
 } from "./notes-repo";
 
 const sampleRow = {
@@ -282,5 +284,32 @@ describe("softDeleteNote", () => {
     const result = await softDeleteNote("ghost");
 
     expect(result).toBe(false);
+  });
+});
+
+describe('managed image references', () => {
+  it('persists the final key with its stable URL in the same insert', async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ ...sampleRow, image_key: 'notes/final.jpg' }] });
+    const record = await createNote({ title: 'Test', subtitle: 'Sub', body: 'Body', imageUrl: '/media/notes/final.jpg', imageKey: 'notes/final.jpg' });
+    expect(query.mock.calls[1][0]).toContain('image_key');
+    expect(query.mock.calls[1][1][10]).toBe('notes/final.jpg');
+    expect(record.imageKey).toBe('notes/final.jpg');
+  });
+  it('updates URL and key together on image replacement', async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [sampleRow] });
+    await updateNote('post', { title: 'Test', subtitle: 'Sub', body: 'Body', imageUrl: '/media/notes/final.jpg', imageKey: 'notes/final.jpg' });
+    expect(query.mock.calls[0][0]).toContain('image_key = $7');
+    expect(query.mock.calls[0][1].slice(-2)).toEqual(['/media/notes/final.jpg', 'notes/final.jpg']);
+  });
+  it('delivery only resolves non-deleted notes while cleanup retains deleted references', async () => {
+    query.mockClear();
+    query.mockResolvedValueOnce({ rows: [{ draft: true }] });
+    expect(await findManagedImage('key')).toEqual({ draft: true });
+    expect(query.mock.calls[0][0]).toContain('deleted_at IS NULL');
+    query.mockResolvedValueOnce({ rows: [{}] });
+    expect(await isImageReferenced('key')).toBe(true);
+    expect(query.mock.calls[1][0]).not.toContain('deleted_at IS NULL');
   });
 });

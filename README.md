@@ -1,126 +1,81 @@
 # LaWho
 
-Sitio web de la Asociación Civil LaWho: a static landing page (NavBar, Historia, Infancias, Terreno, Sumate, Dona, Footer) plus an internal blog (`/operativos-de-salud`) backed by PostgreSQL. A separate authenticated writer area (`/escritor/**`) lets registered users publish notes that appear on the blog immediately, without a redeploy.
+Astro website, PostgreSQL-backed live blog, and authenticated writer area. Production runs on **Vercel Node**, with **Neon PostgreSQL** and a **private Neon Object Storage bucket**. Editorial images do not depend on application disk. Docker/Nginx files remain legacy references, not a verified deployment path for the Vercel build.
 
-This README covers the local development workflow. See `deploy/nginx.conf.example` for the production reverse-proxy reference.
+## Local setup
 
-## Stack
+1. Use the Node version declared in `.nvmrc` / `package.json` and the pinned pnpm version. Install with `pnpm install --frozen-lockfile`.
+2. Copy `docs/vercel-neon.env.example` to a gitignored `.env` and fill the placeholders. The old root `.env.example` may contain legacy filesystem settings; use the new template for this deployment.
+3. Set runtime `DATABASE_*` fields to a restricted role and the **pooled** host of an isolated Neon branch; use TLS. Set `MIGRATION_DATABASE_URL` separately to a **direct** privileged connection, not a pooler URL. Never send migration credentials to the application runtime.
+4. Verify the private `lawhobucket` bucket and set the five storage fields in the template. Having PostgreSQL credentials does not grant S3 access.
+5. Run the migration command and provision a writer using the maintenance commands below before opening DB-backed pages.
 
-- **Astro 7.2** (standard library) with the `@astrojs/node` standalone adapter
-- **TypeScript** (strict), **TailwindCSS v4**
-- **PostgreSQL** (external service) via `pg`
-- **argon2id** password hashing via `argon2`
-- **pnpm** as the package manager
-- Tests via **Vitest**
+Application modules use `astro:env/server`; maintenance tools explicitly load local `.env` through Node and validate their own script-only variables. Storage secrets are validated when storage is used, not by copying secrets into a client bundle.
 
-The only non-standard dependencies are those explicitly permitted by `docs/constitution.md`: `@astrojs/node`, `pg`, `argon2`, `@astrojs/markdown-satteri`, and TailwindCSS.
-
-## Prerequisites
-
-- **Node.js >= 22.12.0** (recommended via [nvm](https://github.com/nvm-sh/nvm)):
-
-  ```sh
-  nvm install 22
-  nvm use 22
-  ```
-
-- **pnpm** (the project pins `pnpm@10.28.2` via the `packageManager` field).
-- A running **PostgreSQL** instance. The database lives outside Docker (constitution rule 5).
-
-## Setup
-
-1. Install dependencies:
-
-   ```sh
-   pnpm install
-   ```
-
-2. Create your environment file:
-
-   ```sh
-   cp .env.example .env
-   ```
-
-   Fill in the real values. All variables are declared in `astro.config.mjs` (`env.schema`) and imported from `astro:env/server` — never from `process.env`.
-
-   | Variable | Description |
-   | --- | --- |
-   | `DATABASE_HOST` | PostgreSQL host |
-   | `DATABASE_PORT` | PostgreSQL port (default `5432`) |
-   | `DATABASE_USER` | PostgreSQL user |
-   | `DATABASE_PASSWORD` | PostgreSQL password |
-   | `DATABASE_NAME` | PostgreSQL database name |
-   | `DATABASE_SSL` | Whether to use SSL (`true`/`false`) |
-   | `SESSION_TTL_MS` | Sliding session lifetime in ms (default `86400000`, i.e. 24h) |
-   | `UPLOADS_DIR` | Local filesystem directory for uploaded images (default `./uploads`) |
-   | `PUBLIC_UPLOADS_URL` | Public URL prefix stored in the DB for uploaded images (default `/uploads`) |
-   | `MAX_UPLOAD_SIZE_BYTES` | Upload size cap in bytes (default `5242880`, i.e. 5MB) |
-   | `SESSION_SECRET` | Optional; reserved for future signing, not consumed by current code |
-
-3. Run the migration to create the `users`, `sessions`, and `notes` tables (plus a seed note):
-
-   ```sh
-   psql -h "$DATABASE_HOST" -p "$DATABASE_PORT" -U "$DATABASE_USER" -d "$DATABASE_NAME" -f migrations/001-init.sql
-   ```
-
-4. Create a writer user. **Registration does not exist by design** — the maintainer creates user rows directly in the database. The `password_hash` must be an argon2id hash (matching `src/lib/password.ts`). You can generate one with the project's own dependency:
-
-   ```sh
-   node --input-type=module -e 'import("argon2").then(({ default: a }) => a.hash("tu-clave").then((h) => console.log(h)))'
-   ```
-
-   Then insert it:
-
-   ```sql
-   INSERT INTO users (email, password_hash, role, is_active)
-   VALUES ('tu@correo.com', '<argon2id-hash>', 'writer', true);
-   ```
-
-## Development
-
-Start the dev server in background mode:
-
-```sh
-astro dev --background
-```
-
-Manage it with:
-
-```sh
-astro dev status   # is it running?
-astro dev logs     # tail the logs
-astro dev stop     # shut it down
-```
-
-The site serves at `http://localhost:4321`.
-
-### Writer routes (auth)
-
-In development the writer routes are reached on the same host:
-
-- `http://localhost:4321/escritor/` — login
-- `http://localhost:4321/escritor/nueva` — new note (redirects to login when unauthenticated)
-
-To mimic the production subdomain locally, add a hosts entry:
-
-```sh
-# /etc/hosts
-127.0.0.1 auth.lawho.local
-```
-
-Then visit `http://auth.lawho.local:4321/escritor/`. The Astro dev server answers on any host header; in production the same routes live behind an Nginx vhost (see `deploy/nginx.conf.example`).
+Select **Node 26** in Vercel project settings and run `nvm use` locally. The maintainer requires Node 26 throughout development, CI and production. The pinned adapter has a stale runtime table and initially emits `nodejs24.x` even under Node 26. The canonical `pnpm build` explicitly normalizes that field to the documented Build Output API `nodejs26.x` runtime, preserving other function settings, then independently verifies every generated function. It fails before building under any other Node major. Do not deploy raw `astro build` output or treat an `engines` declaration alone as sufficient. This compatibility step can be removed after a newer adapter is verified to emit Node 26 natively; no vendor files are patched.
 
 ## Commands
 
-| Command | Action |
+| Command | Purpose |
 | --- | --- |
-| `pnpm install` | Install dependencies |
-| `astro dev --background` | Start the dev server in the background |
-| `pnpm dev` | Start the dev server in the foreground |
-| `pnpm build` | Build the production site to `./dist/` |
-| `pnpm preview` | Preview the production build locally |
-| `pnpm test` | Run the Vitest suite once (`vitest run`) |
+| `pnpm test` | Run all unit tests, including maintenance and upload tests |
+| `pnpm typecheck` | Check application/test TypeScript with the pinned compiler |
+| `pnpm db:migrate` | Apply pending schema migrations with history, checksums and serialization |
+| `pnpm db:create-user` | Create an active writer; enter email and a hidden password interactively |
+| `astro dev --background` | Start local development in background mode |
+| `astro dev status` / `astro dev logs` / `astro dev stop` | Manage the development server |
+| `pnpm build` | Build Vercel output and reject test/secret artifacts in the result |
+| `pnpm check:deployment` | Inspect `.vercel/output` for forbidden artifacts |
 
-## Blog architecture
+Migrations are explicit maintenance/deployment operations: no schema creation happens on visits, module imports, or serverless cold starts. `001` historically includes one example post, `003` adds mandatory soft-delete support, and `004` adds managed image references. `002` is optional sample content and excluded from normal schema application. Historical migrations must not be edited after application. For an existing database without history, follow the verified baseline procedure in `scripts/README.md`; do not assume `IF NOT EXISTS` proves compatibility.
 
-The blog is a **live collection** over PostgreSQL (`src/live.config.ts`, `src/lib/notes-repo.ts`). Markdown note bodies are rendered to HTML inside the loader (`src/lib/markdown.ts`). The landing page stays fully static; only the blog and writer routes opt out of prerendering with `export const prerender = false`.
+The writer command hashes with the existing **Argon2id** helper before insertion and never prints passwords or hashes. Passwords are 8–128 characters and never CLI arguments. No public registration exists. Malformed/plaintext stored passwords need a deliberate reset; there is no plaintext login fallback or automatic deployment-time password reset.
+
+## Neon bucket setup
+
+Before activating storage, confirm the project's supported region, branch endpoint, bucket existence and **private** access mode, and a credential with storage read/write scopes. Private/public-read access cannot be changed in place; do not recreate an existing bucket silently.
+
+Configure bucket CORS for explicit application origins, for example your production origin, the intended staging origin, and `http://localhost:4321`. Allow `PUT` with `Content-Type` and the headers required by the signed request; test the browser preflight. Avoid an unrestricted wildcard origin. Bucket CORS is not authentication.
+
+- The authenticated browser requests a short-lived upload authorization and sends the image directly to a user-scoped `pending/` object. Note submissions contain fields and a pending reference, **not image bytes**. This preserves the 5 MiB image limit despite Vercel's 4.5 MB function request limit.
+- The server rechecks ownership, expiry, actual bounded bytes, JPEG/PNG magic bytes and dimensions, then optimizes with sharp in memory. It writes a distinct random final object under `notes/`; a reusable pending PUT can never overwrite that final image.
+- The post stores a nullable `image_key` and a stable `/media/<key>` URL in `image_url`. This route checks the associated non-deleted post, requires a session for drafts, and redirects to a fresh 60-second signed GET with no-store caching. **Expiring signed URLs are never persisted in PostgreSQL.**
+- Editing without a new file retains the image. Replacement updates PostgreSQL before removing the old unreferenced managed object. Soft delete retains assets. Cleanup failures after a successful save are warnings, not a failed edit.
+- Sessions remain in PostgreSQL, shared across function instances. Writer responses and image redirects disable caching. Root pages are rendered on demand so the featured-post carousel updates without a redeploy and builds do not query the live database.
+
+## Vercel deployment from Git
+
+Deploy from the Vercel dashboard: **Add New → Project → import the GitHub repository → framework preset Astro → Node 26 → Deploy**. No local Vercel CLI, login, token or prebuilt artifact is involved. `vercel.json` keeps Git deployments enabled, pins `pnpm build` as the build command and installs strictly from the lockfile.
+
+| Branch | Vercel environment | Use |
+| --- | --- | --- |
+| `dev` | Preview/staging with its own scoped variables | integration check before `main` |
+| `main` | Production | only after the maintainer confirms `dev` is stable |
+
+Each push runs the canonical `pnpm build` inside Vercel: Node 26 guard, adapter runtime normalization to `nodejs26.x`, build, and artifact inspection. A failed build blocks that deployment. `.github/workflows/ci.yml` runs `pnpm typecheck`, `pnpm test` and the same build on `dev`, `main` and pull requests, with no deployment step and no privileged secret.
+
+Keep Preview and Production variables scoped and keep them on isolated Neon branches. Check the application region against the actual Neon region in project settings. Untrusted fork/branch previews must not receive production credentials. Do not treat a successful local build as proof of live Vercel/Neon connectivity or native-module compatibility in the deployed runtime.
+
+### Release order
+
+1. Run `pnpm db:migrate` locally with `MIGRATION_DATABASE_URL` **before** pushing code that requires the new schema. Migrations stay additive and expand/contract so the running application keeps working with the previous schema while the new one is applied.
+2. Push or merge into `dev` and verify the Preview deployment against the intended Neon branch and bucket.
+3. After the maintainer confirms `dev` is stable, merge into `main`; Vercel builds and promotes production.
+
+Migrations are deliberately **not** part of the Vercel build. Vercel has no build-only variables, so a migration URL configured in the project would also be readable by every deployed function. `MIGRATION_DATABASE_URL` therefore stays in the local gitignored `.env` and never reaches Vercel.
+
+Tests remain versioned with code in `dev` and `main` and run before deployment. Test dependencies may be installed during build, but test files, fixtures, coverage, test-only tooling and `.env` files are forbidden in deployed static/function output. `pnpm build` inspects that output rather than relying on `devDependencies` alone.
+
+## Existing images, orphans, and rollback
+
+Legacy `image_url` values remain unchanged when `image_key` is null. On Vercel, `/uploads/...` references still require an actual accessible image origin or an explicit transfer; a URL in a seed row is not an image file. Do not claim legacy migration is complete until real sources have been inventoried and copied.
+
+For a legacy transfer: inventory actual files and matching rows, dry-run a proposed mapping, validate/optimize each source, upload to a unique finalized key, verify the destination, and update only the matching row/reference. Preserve missing/unreadable references and never delete local originals automatically. A bulk transfer is not run as part of deployment; schedule it explicitly if existing data requires one.
+
+Pending objects are removed after successful saves. For abandoned uploads, use a trusted maintenance session to list `pending/` keys and remove only objects older than the pending TTL **and** signed PUT expiry, allowing an operational grace period for in-flight requests. For finalized orphans, inventory `notes/` objects, allow a long grace period, and check all rows including soft-deleted notes immediately before deletion. Do not run broad bucket deletes or rely on Neon lifecycle expiration rules: those rules are stored but not currently enforced. Automating cleanup requires a separately reviewed maintenance job; there is no destructive cleanup endpoint.
+
+Rollback application releases without dropping additive schema, deleting stored assets, or undoing user data. Build failure after a committed migration does not reverse that migration. Changes integrate through `dev`; `main` is updated only after explicit maintainer confirmation that staging is stable. No deployment script pushes Git branches.
+
+## Verification before activation
+
+Run `pnpm test`, `pnpm typecheck` and `pnpm build`, then use an **isolated** Neon branch/bucket to verify fresh/repeated/concurrent migrations, writer login/logout, direct upload, create/edit/replacement, draft protection, image reads after signed-link expiry, and failure cleanup. Cloud activation, credential scoping, CORS, region, any legacy transfer, and the Vercel project settings must be verified separately; unit tests do not provision or validate them.

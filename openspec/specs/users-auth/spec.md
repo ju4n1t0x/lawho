@@ -22,15 +22,30 @@ The system MUST maintain a `users` table with columns: `id` (primary key), `emai
 - WHEN a second insert attempts the same email
 - THEN the DB MUST reject with a unique constraint violation
 
-### Requirement: User Creation (Manual)
+### Requirement: Maintainer-Only Writer Provisioning
 
-Users MUST be created manually via SQL (migrations seed script or direct DB insert). The system MUST NOT expose a registration endpoint.
+The system MUST provide a standalone maintainer CLI to create writers from email and a securely entered plaintext password. It MUST reuse `hashPassword()` from `src/lib/password.ts`, including the existing 8–128 character policy and Argon2id random-salt hashing, and insert only valid encoded Argon2id hashes into `users.password_hash`. It MUST validate inputs, use parameterized SQL, reject duplicate emails case-insensitively, and close its connection. It MUST NOT log/persist plaintext, accept passwords in command arguments, expose public registration, or reset existing accounts on every deployment. `001-init.sql` creates the table and an example note, not a writer.
 
-#### Scenario: Seed script creates user
+#### Scenario: Maintainer creates writer
 
-- GIVEN `migrations/001-init.sql` includes a seed INSERT
-- WHEN migrations run
-- THEN the user row MUST exist in the `users` table
+- GIVEN the required schema exists and the maintainer securely enters a valid password
+- WHEN the CLI provisions an unused email
+- THEN one writer MUST be inserted with a fresh Argon2id hash that `verifyPassword()` accepts
+- AND no plaintext password MUST appear in arguments, output, logs, or stored rows
+
+#### Scenario: Invalid password or duplicate email
+
+- GIVEN an out-of-policy password or an email already present with different casing
+- WHEN provisioning is attempted
+- THEN the CLI MUST fail clearly without modifying the existing account or exposing secrets
+
+#### Scenario: Legacy invalid credential row
+
+- GIVEN a preexisting plaintext or malformed `password_hash`
+- WHEN account recovery is needed
+- THEN the maintainer MUST perform an explicit reset or controlled credential migration
+- AND login MUST NOT add plaintext fallback or compare hashes as strings
+- AND any separate hash-import path, if needed, MUST validate encoded hashes and prevent double hashing
 
 #### Scenario: No registration endpoint
 
@@ -62,7 +77,7 @@ The repository MUST provide a `findByEmail(email)` function that returns the use
 
 ### Requirement: checkPassword Helper
 
-The repository MUST provide a `checkPassword(email, plaintext)` function that returns the user row if credentials are valid, or `null` if the email is not found or the password does not match.
+The repository MUST provide a `checkPassword(email, plaintext)` function that returns the user row if credentials are valid, or `null` if the email is not found or the password does not match. Verification MUST continue through `verifyPassword()`, never hash-string equality or plaintext fallback. Existing active-user checks and DB-backed session cookies, sliding expiry, and logout behavior MUST remain unchanged on Vercel Node; no second auth system or Redis is required.
 
 #### Scenario: Valid credentials
 

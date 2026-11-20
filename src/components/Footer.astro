@@ -1,6 +1,7 @@
 ---
 const INSTAGRAM_URL = "https://www.instagram.com/lawho_medicos_voluntarios/";
-const EMAIL_URL = "mailto:elimacedo1806@gmail.com";
+const EMAIL = import.meta.env.EMAIL_URL;
+const EMAIL_URL = `mailto:${EMAIL}`;
 
 const year = new Date().getFullYear();
 ---
@@ -15,9 +16,7 @@ const year = new Date().getFullYear();
         width="54"
         height="54"
       />
-      <span
-        class="mt-3 text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground"
-      >
+      <span class="mt-3 text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
         Grupo de Médicos Voluntarios
       </span>
     </span>
@@ -35,9 +34,9 @@ const year = new Date().getFullYear();
       >
         Instagram
       </a>
-      <a href={EMAIL_URL} class="transition-colors hover:text-accent"
-        >lawhoasociacioncivil@gmail.com</a
-      >
+      <a href={EMAIL_URL} class="transition-colors hover:text-accent">
+        lawhoasociacioncivil@gmail.com
+      </a>
     </div>
     <p class="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/60">
       &copy; {year} Ignia Labs - Sasia Juan Ignacio.

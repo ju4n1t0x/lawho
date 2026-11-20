@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the `notes` content collection: schema, loader, and the contract between the read-side and the future write-side (DB/loader swap).
+Defines the PostgreSQL-backed live `notes` collection, Markdown rendering, and stable read/write image references on Vercel Node.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ The system MUST declare a `notes` live collection in `src/live.config.ts` using 
 
 - GIVEN the Astro server is running with a live DB connection
 - WHEN `getLiveCollection('notes')` is called
-- THEN it MUST return one entry per row in the `notes` table
+- THEN it MUST return one entry per published, non-deleted row in the `notes` table
 
 #### Scenario: No build-time glob for notes
 
@@ -24,7 +24,7 @@ The system MUST declare a `notes` live collection in `src/live.config.ts` using 
 
 ### Requirement: Schema Fields
 
-The live collection schema MUST declare these fields: `title` (string, MUST), `subtitle` (string, MUST), `image` (string URL, MUST), `date` (date, MUST), `draft` (boolean, default false, MUST), `featured` (boolean, default true, MUST), `author` (string, SHOULD), `tag` (string, MAY). The `image` field is now a string URL (from `PUBLIC_UPLOADS_URL`) rather than the Astro `image()` helper.
+The live collection schema MUST declare these fields: `title` (string, MUST), `subtitle` (string, MUST), `image` (string URL, MUST), `date` (date, MUST), `draft` (boolean, default false, MUST), `featured` (boolean, default true, MUST), `author` (string, SHOULD), `tag` (string, MAY). The `image` field remains a stable URL string rather than the Astro `image()` helper; adding database storage metadata MUST NOT change this public data shape.
 
 #### Scenario: Required fields validated
 
@@ -46,7 +46,7 @@ The live collection schema MUST declare these fields: `title` (string, MUST), `s
 
 ### Requirement: Image Field
 
-The `image` field MUST be a string URL pointing to the public origin (`PUBLIC_UPLOADS_URL` prefix). The Astro `image()` helper is no longer used for this collection.
+The `image` field MUST remain a string copied from compatible `image_url` references: a stable `/media/<key>` URL for new managed images or an existing legacy URL when `image_key` is null. The Astro `image()` helper is not used for this collection. No expiring signed GET, storage credential, or pending object key may be exposed as a persisted collection image reference. Public pages, cards, carousel, and writer previews MUST keep consuming `data.image` without a type change.
 
 #### Scenario: Image URL from DB
 
@@ -54,9 +54,16 @@ The `image` field MUST be a string URL pointing to the public origin (`PUBLIC_UP
 - WHEN the entry is loaded
 - THEN `data.image` MUST be the string `'/uploads/notes/slug/photo.jpg'`
 
+#### Scenario: Managed image survives signed-link expiry
+
+- GIVEN a note with a finalized `image_key` and `image_url = '/media/<key>'`
+- WHEN the entry is loaded after an earlier signed GET expires
+- THEN `data.image` MUST still be the stable `/media/<key>` string
+- AND the delivery route MUST issue a new signed GET only after checking note accessibility
+
 ### Requirement: Markdown Body
 
-Each entry MUST provide a Markdown body stored in the DB `body` column, rendered on demand via `context.renderMarkdown(body)` from the live loader context.
+Each entry MUST provide a Markdown body stored in the DB `body` column and rendered on demand into the live entry's `rendered.html` with the existing server-side Markdown helper and authorized `@astrojs/markdown-satteri` pipeline. Storage/deployment changes MUST preserve Markdown semantics and MUST NOT replace the body with plain text or pre-signed image data.
 
 #### Scenario: Body renders via renderMarkdown
 
@@ -76,7 +83,7 @@ The schema fields and their types MUST remain stable across the loader migration
 
 ### Requirement: Seed Note
 
-The system MUST ship at least one seed note as a DB row inserted by `migrations/001-init.sql` (or a seed script) so the blog index renders content on first deploy.
+Historical `migrations/001-init.sql` MUST remain unchanged and its existing example note MUST be disclosed for fresh databases. It creates no writer account and does not supply the `/uploads/...` image file. `002-seed-terreno.sql` is optional sample content and MUST NOT run in the default schema migration command. Do not silently add all samples to production or claim their images were transferred without verified sources.
 
 #### Scenario: Seed note present after migration
 
@@ -108,7 +115,7 @@ The system MUST provide a `listAllNotesIncludingDrafts` function in `src/lib/not
 
 ### Requirement: Update Note
 
-The system MUST provide an `updateNote` function in `src/lib/notes-repo.ts` that updates an existing note by `slug`. The function MUST NOT change the `slug` field under any circumstance. The `image` field MUST be read-only on update — existing image URL is preserved, no new image is accepted through this function.
+The system MUST provide an `updateNote` function in `src/lib/notes-repo.ts` that updates an existing non-deleted note by `slug`. The function MUST NOT change the `slug` field under any circumstance. When a validated replacement is supplied, `imageKey` and `imageUrl` MUST update `image_key` and `image_url` atomically in the same DB write. When omitted, both current references MUST remain unchanged, including a null legacy key. Arbitrary client URLs/keys MUST NOT bypass upload finalization.
 
 #### Scenario: Update title and subtitle
 
@@ -123,11 +130,17 @@ The system MUST provide an `updateNote` function in `src/lib/notes-repo.ts` that
 - THEN the slug MUST remain `mi-post`
 - AND no error MUST be thrown
 
-#### Scenario: Image read-only on update
+#### Scenario: Image retained without replacement
 
-- GIVEN a note with image `/uploads/notes/mi-post/photo.jpg` (read-only)
-- WHEN `updateNote('mi-post', { image: '/uploads/notes/mi-post/new.jpg' })` is called
-- THEN the image MUST remain `/uploads/notes/mi-post/photo.jpg` (read-only)
+- GIVEN a note with image `/uploads/notes/mi-post/photo.jpg` and null `image_key`
+- WHEN a text-only update is performed without image fields
+- THEN both image references MUST remain unchanged
+
+#### Scenario: Finalized replacement persisted together
+
+- GIVEN a validated replacement with a new finalized key and matching stable `/media/<key>` URL
+- WHEN `updateNote` succeeds
+- THEN both references MUST change together before any old-object deletion is attempted
 
 #### Scenario: Non-existent slug
 
@@ -137,7 +150,7 @@ The system MUST provide an `updateNote` function in `src/lib/notes-repo.ts` that
 
 ### Requirement: Soft Delete Note
 
-The system MUST provide a `softDeleteNote` function in `src/lib/notes-repo.ts` that sets `deleted_at` to the current timestamp for the note matching the given slug.
+The system MUST provide a `softDeleteNote` function in `src/lib/notes-repo.ts` that sets `deleted_at` to the current timestamp for the note matching the given slug. It MUST NOT delete images or clear stored image references; managed-image delivery MUST deny access once the associated note is inaccessible.
 
 #### Scenario: Soft delete sets timestamp
 
@@ -196,6 +209,17 @@ The system MUST provide a `listPublishedNotes` function that returns all notes w
 - GIVEN 3 published non-deleted notes with dates Jan 5, Jan 10, Jan 15
 - WHEN `listPublishedNotes()` is called
 - THEN the results MUST be ordered: Jan 15, Jan 10, Jan 5
+
+### Requirement: Additive Image Key Migration
+
+A new migration after the historical schema migrations MUST add nullable `notes.image_key` (text) without dropping/changing `image_url` or rewriting previously applied SQL. Existing rows MUST retain their URLs with null keys. New managed uploads MUST store a finalized key plus matching stable delivery URL; legacy backfill MAY set these only after verifying the destination image. Collection mapping MUST remain compatible with unmigrated legacy images.
+
+#### Scenario: Existing rows survive migration
+
+- GIVEN notes with legacy `image_url` values
+- WHEN the additive migration runs
+- THEN `image_key` MUST exist and remain null for those rows
+- AND their URLs and Markdown bodies MUST remain unchanged
 
 ### Requirement: Get Note By Slug
 

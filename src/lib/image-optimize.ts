@@ -25,8 +25,9 @@ export async function optimizeImage(
   // OOM guard — bail before sharp allocates a full decode buffer.
   const meta = await sharp(bytes).metadata();
   if (
-    (meta.width && meta.width > MAX_IMAGE_AXIS_PX) ||
-    (meta.height && meta.height > MAX_IMAGE_AXIS_PX)
+    !meta.width || !meta.height ||
+    meta.width > MAX_IMAGE_AXIS_PX || meta.height > MAX_IMAGE_AXIS_PX ||
+    (meta.pages ?? 1) > 1
   ) {
     throw new Error(
       `Image dimensions ${meta.width}×${meta.height} exceed ${MAX_IMAGE_AXIS_PX}px axis limit`,
@@ -47,5 +48,8 @@ export async function optimizeImage(
   }
 
   const optimized = await pipeline.toBuffer();
+  if (optimized.byteLength > bytes.byteLength) {
+    throw new Error('Optimized image exceeds the original size');
+  }
   return { bytes: new Uint8Array(optimized), mime };
 }

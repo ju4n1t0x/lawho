@@ -8,7 +8,7 @@ const historia = [
     paso: "01",
     titulo: "Preparamos",
     texto:
-      "En Córdoba recolectamos y clasificamos la medicación donada por laboratorios: control de vencimientos, armado por especialidad y almacenamiento.",
+      "En Córdoba recolectamos y clasificamos la medicación donada por laboratorios farmacéuticos: control de vencimientos, armado por especialidad y almacenamiento.",
   },
   {
     paso: "02",
@@ -35,36 +35,30 @@ const historia = [
   <div class="mx-auto max-w-6xl">
     <Reveal>
       <div class="mb-16 max-w-3xl">
-        <span class="text-xs font-bold uppercase tracking-[0.25em] text-accent"
-          >Cómo trabajamos</span
-        >
-        <h2
-          class="mt-5 text-balance font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl"
-        >
-          Dos operativos al año, seis días en terreno y un radio de 100 km desde
-          Santa Victoria Este.
+        <span class="text-xs font-bold uppercase tracking-[0.25em] text-accent">
+          Cómo trabajamos
+        </span>
+        <h2 class="mt-5 text-balance font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+          Dos operativos al año, seis días en terreno por operativo y un radio
+          de 100 km desde Santa Victoria Este.
         </h2>
       </div>
     </Reveal>
 
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {
-        historia.map((h, i) => (
-          <Reveal delay={i * 120}>
-            <div class="lift h-full rounded-[2rem] border border-border bg-card p-8">
-              <span class="font-display text-4xl font-semibold text-accent/40">
-                {h.paso}
-              </span>
-              <h3 class="mt-5 font-display text-2xl font-semibold">
-                {h.titulo}
-              </h3>
-              <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {h.texto}
-              </p>
-            </div>
-          </Reveal>
-        ))
-      }
+      {historia.map((h, i) => (
+        <Reveal delay={i * 120}>
+          <div class="lift h-full rounded-[2rem] border border-border bg-card p-8">
+            <span class="font-display text-4xl font-semibold text-accent/40">
+              {h.paso}
+            </span>
+            <h3 class="mt-5 font-display text-2xl font-semibold">{h.titulo}</h3>
+            <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {h.texto}
+            </p>
+          </div>
+        </Reveal>
+      ))}
     </div>
 
     <Reveal delay={160}>
@@ -79,17 +73,15 @@ const historia = [
             class="h-full min-h-[18rem] w-full object-cover"
           />
         </div>
-        <div
-          class="flex flex-col justify-center rounded-[2.5rem] bg-foreground p-10 text-background"
-        >
+        <div class="flex flex-col justify-center rounded-[2.5rem] bg-foreground p-10 text-background">
           <p class="text-pretty font-display text-2xl leading-snug md:text-3xl">
             &ldquo;Así como una flor surge en medio de condiciones desafiantes,
             creemos en el potencial de florecer y construir un futuro próspero
             para todos.&rdquo;
           </p>
-          <span class="mt-6 text-xs uppercase tracking-[0.25em] opacity-60"
-            >LAWHO</span
-          >
+          <span class="mt-6 text-xs uppercase tracking-[0.25em] opacity-60">
+            LAWHO
+          </span>
         </div>
       </div>
     </Reveal>

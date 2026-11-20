@@ -1,5 +1,7 @@
 # build output
 dist/
+.vercel/
+coverage/
 
 # runtime image uploads
 uploads/
@@ -22,6 +24,8 @@ pnpm-debug.log*
 .env.development
 .env.local
 .env.*.local
+.env.*
+!.env.example
 
 # macOS-specific files
 .DS_Store

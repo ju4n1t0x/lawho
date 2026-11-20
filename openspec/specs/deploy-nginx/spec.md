@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Operational reference for the Nginx reverse-proxy configuration serving the Astro Node server and static uploads.
+Optional legacy operational reference for self-hosted Nginx and existing local images. Retired as the primary production contract: Vercel Node and private Neon Object Storage delivery are defined by `docker-deploy` and `image-upload`. No Nginx deployment, upload alias, or persistent volume is required for Vercel.
 
 ## Requirements
 
 ### Requirement: Nginx Config Example
 
-The system MUST provide `deploy/nginx.conf.example` containing a complete vhost configuration for the writer subdomain.
+The existing `deploy/nginx.conf.example` MAY be retained as documentation for an explicitly selected legacy deployment; it MUST NOT be treated as Vercel configuration or deleted/rewritten without authorization. The following proxy/static-file requirements apply only when that optional legacy deployment is maintained.
 
 #### Scenario: Example file exists
 
@@ -24,7 +24,7 @@ The system MUST provide `deploy/nginx.conf.example` containing a complete vhost 
 
 ### Requirement: Reverse Proxy to Astro Node
 
-The vhost MUST reverse-proxy application requests to the Astro Node server (default `localhost:4321` or configurable upstream).
+An explicitly maintained legacy vhost MUST reverse-proxy application requests to its separately verified standalone Astro Node server (default `localhost:4321` or configurable upstream). Vercel function artifacts MUST NOT be assumed to expose this standalone upstream.
 
 #### Scenario: Proxy pass configured
 
@@ -39,7 +39,7 @@ The vhost MUST reverse-proxy application requests to the Astro Node server (defa
 
 ### Requirement: Static Uploads Serving
 
-The vhost MUST serve `/uploads/**` (read-only) directly from the `UPLOADS_DIR` filesystem path, bypassing the Astro Node server.
+A legacy vhost MAY keep serving existing `/uploads/**` directly from its verified local upload path during transition. This MUST NOT become the destination for new Vercel uploads. Keep existing URLs readable until verified transfer/backfill updates their references; seed URLs do not prove source files exist. Never remove local originals automatically. Managed `/media/<key>` delivery MUST use the application's access-checked fresh signed-GET redirect, not a public Nginx alias to pending/private objects.
 
 #### Scenario: Upload served by Nginx
 
@@ -65,7 +65,7 @@ The vhost SHOULD include headers suitable for a TLS-terminated deployment (`Stri
 
 ### Requirement: Dev Subdomain Documentation
 
-The README or config MUST document the dev subdomain setup (`auth.lawho.local` via `/etc/hosts` (read-only) or route-based `/escritor/**` (read-only) path).
+The development guide MUST document route-based `/escritor/**` access on localhost without requiring Nginx or a custom subdomain. A legacy `auth.lawho.local` hosts-file setup MAY be documented as optional. Storage CORS MUST include explicit allowed localhost/Preview/production origins rather than relying on this proxy for authorization.
 
 #### Scenario: Dev setup documented
 

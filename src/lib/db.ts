@@ -13,7 +13,7 @@ let pool: Pool | undefined;
 /**
  * Build the pg.Pool configuration from the server environment.
  * No connection string is hardcoded; every value comes from `astro:env/server`,
- * which Astro validates at build time (missing secrets fail the build loudly).
+ * which Astro validates at its server consumption boundary.
  */
 function buildPoolConfig() {
   return {
@@ -23,6 +23,10 @@ function buildPoolConfig() {
     password: DATABASE_PASSWORD,
     database: DATABASE_NAME,
     ssl: DATABASE_SSL,
+    max: 3,
+    connectionTimeoutMillis: 8000,
+    idleTimeoutMillis: 10000,
+    allowExitOnIdle: true,
   };
 }
 
@@ -33,6 +37,7 @@ function buildPoolConfig() {
 export function getPool(): Pool {
   if (!pool) {
     pool = new Pool(buildPoolConfig());
+    pool.on('error', () => console.error('Se perdió una conexión inactiva a la base de datos'));
   }
   return pool;
 }

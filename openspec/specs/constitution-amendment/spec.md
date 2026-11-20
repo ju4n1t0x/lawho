@@ -2,74 +2,76 @@
 
 ## Purpose
 
-Amend `docs/constitution.md` rule 1 to permit TailwindCSS v4 and `sharp` as dependencies, gating all subsequent image- and Tailwind-related work. This amendment is a prerequisite for the site-implementation and astro-image-refactor changes.
+Keep the constitution's explicit dependency allowlist ahead of implementation. The approved Vercel + Neon amendment supersedes the former primary Node-standalone/Docker contract and authorizes the Vercel adapter and S3 SDK before installation. Earlier Tailwind/image amendments remain historical context, not instructions to remove installed dependencies or create commits during an explicitly uncommitted documentation task.
 
 ## Requirements
 
 ### Requirement: Rule 1 Amendment
 
-The project constitution rule 1 ("Stack mínimo — Astro 7.2 + stdlib only") MUST be updated to explicitly allow TailwindCSS v4 (and its Vite plugin `@tailwindcss/vite`), `@astrojs/node`, `pg`, `argon2`, and `@astrojs/markdown-satteri` as permitted dependencies. Each addition MUST be listed as an explicit exception with a one-line rationale.
+The constitution MUST explicitly permit TailwindCSS v4 and `@tailwindcss/vite`, `@astrojs/vercel`, `pg`, `argon2`, `@astrojs/markdown-satteri`, `sharp`, `@aws-sdk/client-s3`, and `@aws-sdk/s3-request-presigner`, each with a one-line rationale. `@astrojs/vercel` replaces `@astrojs/node` as the primary production adapter. Astro 7.x, adapter, Node, and native dependency versions MUST be verified together against Vercel support rather than requiring the outdated exact 7.2 minor. No ORM, second auth system, Redis session dependency, or runtime dotenv is authorized by this amendment.
 
-#### Scenario: Amendment applied before Tailwind install
+#### Scenario: Amendment applied before new dependencies
 
-- GIVEN `docs/constitution.md` contains rule 1 mentioning Astro 7.2 + stdlib only
-- WHEN the amendment task completes
-- THEN rule 1 text MUST include an explicit exception for TailwindCSS v4
-- AND `package.json` MUST NOT contain `tailwindcss` or `@tailwindcss/vite` until after the amendment is committed
+- GIVEN explicit maintainer approval to align the affected contracts
+- WHEN this documentation amendment completes
+- THEN the constitution and relevant specs MUST explicitly authorize the Vercel adapter and both AWS SDK packages before their installation
+- AND this documentation-only task MUST NOT change dependencies, configuration, or application files
 
 #### Scenario: Gate prevents premature dependency
 
-- GIVEN the amendment has NOT been committed
-- WHEN a developer attempts to add TailwindCSS to `package.json`
-- THEN the apply phase MUST refuse to proceed until the amendment commit exists in history
+- GIVEN a dependency is not in the approved constitution/specs
+- WHEN installation is attempted
+- THEN implementation MUST wait for explicit approval and the corresponding contract update
 
 #### Scenario: New deps permitted after amendment
 
-- GIVEN the amendment commit is in history listing `@astrojs/node`, `pg`, `argon2`, `@astrojs/markdown-satteri`
-- WHEN a developer runs `pnpm add @astrojs/node pg argon2 @astrojs/markdown-satteri`
-- THEN the apply phase MUST allow the install to proceed
+- GIVEN the approved documentation amendment explicitly lists `@astrojs/vercel`, `@aws-sdk/client-s3`, and `@aws-sdk/s3-request-presigner`
+- WHEN the subsequent implementation task installs compatible versions
+- THEN installation MUST be allowed while reusing existing `pg`, `argon2`, and `sharp`
+- AND a separate amendment commit MUST NOT be required when the maintainer explicitly requested no commits
 
 #### Scenario: Unlisted dep still blocked
 
-- GIVEN the amendment lists only `@astrojs/node`, `pg`, `argon2`, `@astrojs/markdown-satteri`
+- GIVEN the approved allowlist
 - WHEN a developer attempts to add `express` to `package.json`
 - THEN the apply phase MUST refuse to proceed; `express` is not in the sanctioned list
 
 ### Requirement: Rule 1 Amendment (sharp)
 
-The project constitution rule 1 ("Stack mínimo — Astro 7.2 + stdlib only") MUST be updated to explicitly allow `sharp` (^0.35.4) as a permitted dependency. The addition MUST be listed as an explicit exception with a one-line rationale: native image engine required by `astro:assets`/`<Image>` build pipeline.
+The constitution MUST retain `sharp` as an explicit exception for the `astro:assets` build pipeline and existing Node-side editorial image optimization. The deployment migration MUST preserve JPEG/PNG validation, the inclusive 5 MiB input cap, dimension guards, EXIF stripping, and format-preserving optimization; it MUST NOT replace server validation with client MIME claims.
 
 #### Scenario: Amendment applied before sharp install
 
-- GIVEN `docs/constitution.md` contains rule 1 mentioning Astro 7.2 + stdlib only
+- GIVEN a future change needs a newly unlisted image-processing dependency
 - WHEN the amendment task completes
-- THEN rule 1 text MUST include an explicit exception for `sharp`
-- AND `package.json` MUST NOT contain `sharp` until after the amendment is committed
+- THEN its explicit exception and rationale MUST exist before installation
+- AND the existing authorized `sharp` dependency MUST NOT be removed merely to replay a historical amendment
 
 #### Scenario: Gate prevents premature dependency
 
-- GIVEN the amendment has NOT been committed
-- WHEN a developer attempts to add `sharp` to `package.json`
-- THEN the apply phase MUST refuse to proceed until the amendment commit exists in history
+- GIVEN an image dependency is not authorized
+- WHEN a developer attempts to add it
+- THEN the apply phase MUST require the approved contract amendment first
 
 #### Scenario: Sharp permitted after amendment
 
-- GIVEN the amendment commit is in history listing `sharp`
+- GIVEN the approved constitution lists `sharp`
 - WHEN a developer runs `pnpm add sharp`
 - THEN the apply phase MUST allow the install to proceed
 
 #### Scenario: Unlisted dep still blocked
 
-- GIVEN the amendment lists only `sharp`
+- GIVEN the approved allowlist includes `sharp` but not the proposed new dependency
 - WHEN a developer attempts to add an unlisted dependency to `package.json`
 - THEN the apply phase MUST refuse to proceed; unlisted dep is not in the sanctioned list
 
-### Requirement: Amendment Commit Ordering
+### Requirement: Amendment Ordering and Scope
 
-The amendment MUST be committed as its own atomic commit, preceding any other commit in the change that touches `package.json`, `astro.config.mjs`, `src/styles/global.css`, `src/lib/db.ts`, or `src/lib/password.ts`.
+Approved constitution/specification edits MUST precede dependency/configuration/application implementation. This replaces the historical requirement to create a separate amendment commit as an installation gate. Commit boundaries MUST follow the maintainer's current workflow; an explicit documentation-only/no-commits instruction MUST be respected. Integrate via `dev`, never directly into `main` without maintainer confirmation.
 
-#### Scenario: Git log shows amendment first
+#### Scenario: Documentation-first handoff
 
-- GIVEN the change is complete
-- WHEN inspecting `git log --oneline`
-- THEN the amendment commit MUST appear before any commit that touches `package.json`, `astro.config.mjs`, `src/styles/global.css`, `src/lib/db.ts`, or `src/lib/password.ts`
+- GIVEN the authorized scope is constitution, AGENTS, and affected specifications only
+- WHEN the alignment is delivered
+- THEN new dependencies MUST be explicitly permitted without being installed in that task
+- AND unrelated dirty files MUST remain intact and no commit MUST be created

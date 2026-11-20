@@ -5,6 +5,7 @@ export interface NoteRow {
   subtitle: string;
   body: string;
   image_url: string;
+  image_key?: string | null;
   date: string | Date;
   draft: boolean;
   featured: boolean;

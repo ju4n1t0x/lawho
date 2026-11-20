@@ -22,7 +22,7 @@ export const collections = {
   notes: defineLiveCollection({
     loader: {
       name: "pg-notes",
-      async loadCollection() {
+      async loadCollection(_context: { collection: string }) {
         const notes = await listPublishedNotes();
         return {
           entries: await Promise.all(
@@ -34,7 +34,7 @@ export const collections = {
           ),
         };
       },
-      async loadEntry({ filter }) {
+      async loadEntry({ filter }: { filter: { id: string }; collection: string }) {
         const note = await getNoteBySlug(filter.id);
         if (!note) return undefined;
         return {

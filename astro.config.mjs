@@ -1,13 +1,19 @@
 // @ts-check
 import { defineConfig, envField } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
   // Producción: servir desde la raíz sin prefijo de ruta.
   // (El preview de GitHub Pages usaba site/base específicos; ya no aplican.)
-  adapter: node({ mode: 'standalone' }),
+  adapter: vercel({
+    excludeFiles: [
+      '**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/fixtures/**',
+      '**/coverage/**', '**/node_modules/vitest/**', '**/node_modules/@vitest/**',
+      '**/node_modules/typescript/**', '**/node_modules/@types/**',
+    ],
+  }),
   vite: {
     plugins: [tailwindcss()],
   },
@@ -27,8 +33,11 @@ export default defineConfig({
       DATABASE_NAME: envField.string({ context: 'server', access: 'secret' }),
       DATABASE_SSL: envField.boolean({ context: 'server', access: 'public', default: false }),
       SESSION_TTL_MS: envField.number({ context: 'server', access: 'secret', default: 86400000 }),
-      UPLOADS_DIR: envField.string({ context: 'server', access: 'secret', default: './uploads' }),
-      PUBLIC_UPLOADS_URL: envField.string({ context: 'server', access: 'public', default: '/uploads' }),
+      AWS_ENDPOINT_URL_S3: envField.string({ context: 'server', access: 'secret', optional: true }),
+      AWS_REGION: envField.string({ context: 'server', access: 'secret', optional: true }),
+      AWS_ACCESS_KEY_ID: envField.string({ context: 'server', access: 'secret', optional: true }),
+      AWS_SECRET_ACCESS_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      STORAGE_BUCKET: envField.string({ context: 'server', access: 'secret', optional: true }),
       MAX_UPLOAD_SIZE_BYTES: envField.number({ context: 'server', access: 'secret', default: 5242880 }),
       SESSION_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
     },

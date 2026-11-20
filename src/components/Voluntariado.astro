@@ -1,7 +1,8 @@
 ---
 import Reveal from "./Reveal.astro";
 
-const EMAIL_URL = "lawhoasociacioncivil@gmail.com";
+const EMAIL = import.meta.env.EMAIL_URL;
+const EMAIL_URL = `mailto:${EMAIL}`;
 ---
 
 <section id="voluntariado" class="px-4 pb-28">
@@ -12,9 +13,8 @@ const EMAIL_URL = "lawhoasociacioncivil@gmail.com";
           ¿Sos profesional de la salud?
         </h2>
         <p class="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Convocamos médicos especialistas, odontólogos y enfermeros con título
-          habilitante, seguro personal y de mala praxis vigentes, avalados ante
-          el Ministerio de Salud de Salta.
+          Convocamos médicos especialistas, y odontólogos con disponibilidad de
+          tiempo para la participación en los operativos..
         </p>
         <a
           href={EMAIL_URL}

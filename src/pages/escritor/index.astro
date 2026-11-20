@@ -33,7 +33,7 @@ if (Astro.request.method === "POST") {
     Astro.cookies.set(
       SESSION_COOKIE_NAME,
       token,
-      sessionCookieOptions(SESSION_TTL_MS, import.meta.env.PROD),
+      sessionCookieOptions(SESSION_TTL_MS, new URL(Astro.request.url).protocol === 'https:'),
     );
     return Astro.redirect("/escritor/");
   }

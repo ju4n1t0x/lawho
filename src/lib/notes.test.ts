@@ -5,7 +5,7 @@ import { formatNoteDate, getPublishedNotes, type LiveNoteEntry } from "./notes";
 
 function makeNote(
   slug: string,
-  data: Omit<NoteData, "title" | "subtitle" | "image"> &
+  data: Omit<NoteData, "title" | "subtitle" | "image" | "draft" | "featured"> &
     Partial<Pick<NoteData, "title" | "subtitle" | "image" | "draft" | "featured">>,
 ): LiveNoteEntry {
   return {

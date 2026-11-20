@@ -1,7 +1,8 @@
 ---
-import { SESSION_TTL_MS } from "astro:env/server";
+import { SESSION_TTL_MS, MAX_UPLOAD_SIZE_BYTES } from "astro:env/server";
 import { SESSION_COOKIE_NAME } from "../../lib/session";
 import { getActiveSessionAndTouch } from "../../lib/session-repo";
+import { WRITER_LIMITS } from "../../scripts/writer-upload";
 
 interface Props {
   mode?: "create" | "update";
@@ -28,6 +29,8 @@ const isUpdate = mode === "update";
 const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
 const session = token ? await getActiveSessionAndTouch(token, SESSION_TTL_MS) : null;
 const isAuthenticated = !!session;
+Astro.response.headers.set("Cache-Control", "no-store");
+const maxImageMiB = (MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)).toLocaleString("es", { maximumFractionDigits: 3 });
 
 const inputClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
@@ -37,7 +40,7 @@ const inputClass =
   !isAuthenticated ? (
     <div class="mx-auto max-w-md rounded-[2rem] border border-border bg-card p-8 text-center">
       <p class="text-sm text-muted-foreground">
-        Necesitás iniciar sesión para escribir.
+        Es necesario iniciar sesión para escribir.
       </p>
       <a
         href="/escritor/"
@@ -54,8 +57,8 @@ const inputClass =
         </h1>
         <p class="mt-2 text-sm text-muted-foreground">
           {isUpdate
-            ? "Editá los datos de la nota. El cuerpo acepta Markdown."
-            : "Escribí una crónica del terreno. El cuerpo acepta Markdown."}
+            ? "Edite los datos de la nota. El cuerpo acepta Markdown."
+            : "Escriba una crónica del terreno. El cuerpo acepta Markdown."}
         </p>
 
         {error && (
@@ -70,9 +73,11 @@ const inputClass =
         <form
           method="POST"
           action={isUpdate ? (actionUrl ?? "/escritor/") : "/escritor/nueva"}
-          enctype="multipart/form-data"
+          data-writer-upload
+          data-max-bytes={MAX_UPLOAD_SIZE_BYTES}
           class="mt-6 grid gap-4"
         >
+          <input type="hidden" name="pending_key" value="" />
           <div class="grid gap-1.5">
             <label for="title" class="text-sm font-medium">
               Título
@@ -82,6 +87,7 @@ const inputClass =
               name="title"
               type="text"
               required
+              maxlength={WRITER_LIMITS.title}
               value={values?.title ?? ""}
               class={inputClass}
             />
@@ -96,6 +102,7 @@ const inputClass =
               name="subtitle"
               type="text"
               required
+              maxlength={WRITER_LIMITS.subtitle}
               value={values?.subtitle ?? ""}
               class={inputClass}
             />
@@ -109,6 +116,7 @@ const inputClass =
               id="body"
               name="body"
               required
+              maxlength={WRITER_LIMITS.body}
               rows={12}
               class={inputClass}
             >
@@ -124,6 +132,7 @@ const inputClass =
               id="tag"
               name="tag"
               type="text"
+              maxlength={WRITER_LIMITS.tag}
               value={values?.tag ?? ""}
               class={inputClass}
             />
@@ -142,17 +151,18 @@ const inputClass =
 
           <div class="grid gap-1.5">
             <label for="image" class="text-sm font-medium">
-              Imagen (JPG/PNG, máx. 5MB)
+              Imagen (JPG/PNG, máx. {maxImageMiB} MiB)
             </label>
             <input
               id="image"
-              name="image"
               type="file"
               accept="image/jpeg,image/png"
-              required={!isUpdate}
+              required={!isUpdate || !imageUrl}
               class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
             />
           </div>
+
+          <p data-upload-status role="status" aria-live="polite" class="text-sm text-muted-foreground"></p>
 
           <button
             type="submit"
@@ -165,3 +175,8 @@ const inputClass =
     </div>
   )
 }
+
+<script>
+  import { installWriterUploads } from "../../scripts/writer-upload";
+  installWriterUploads(document);
+</script>

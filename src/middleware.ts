@@ -41,5 +41,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const response = await next();
   // Prevent search engines from indexing the writer section.
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  response.headers.set('Cache-Control', 'private, no-store');
   return response;
 });

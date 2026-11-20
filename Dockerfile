@@ -3,10 +3,10 @@
 ###############################################################################
 # Stage 1 — build: instala dependencias y genera el bundle de producción
 ###############################################################################
-FROM node:22-bookworm-slim AS builder
+FROM node:26.13.1-bookworm-slim AS builder
 
 # pnpm pinned desde package.json (packageManager)
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN npm install --global pnpm@12.21.0
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ RUN pnpm astro build
 ###############################################################################
 # Stage 2 — runtime: imagen mínima con el servidor compilado
 ###############################################################################
-FROM node:22-bookworm-slim AS runtime
+FROM node:26.13.1-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
@@ -40,7 +40,7 @@ ENV PORT=4321
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN npm install --global pnpm@12.21.0
 
 # Dependencias de producción únicamente (argon2/sharp prebuilds para glibc)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
