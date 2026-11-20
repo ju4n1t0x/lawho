@@ -1,0 +1,42 @@
+{
+  "name": "",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": "26.x"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node tools/vercel-runtime.mjs --check-node && astro build && node tools/vercel-runtime.mjs && node tools/check-deployment.mjs",
+    "check:deployment": "node tools/check-deployment.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:create-user": "node scripts/create-user.mjs",
+    "test:db-tools": "vitest run scripts/tests",
+    "typecheck": "tsc --noEmit",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/markdown-satteri": "0.4.10",
+    "@astrojs/vercel": "11.0.22",
+    "@aws-sdk/client-s3": "3.1173.0",
+    "@aws-sdk/s3-request-presigner": "3.1173.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "argon2": "^0.45.1",
+    "astro": "7.4.12",
+    "pg": "^8.23.0",
+    "sharp": "^0.35.4",
+    "tailwindcss": "^4.3.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "packageManager": "pnpm@12.21.0",
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

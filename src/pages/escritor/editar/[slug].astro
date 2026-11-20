@@ -1,0 +1,69 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import WriterForm from "../../../components/server-islands/WriterForm.astro";
+import { getNoteBySlug } from "../../../lib/notes-repo";
+import { updateManagedNote } from "../../../lib/managed-notes";
+import { UploadValidationError } from "../../../lib/uploads";
+import { SESSION_COOKIE_NAME } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/session-repo";
+import { readWriterSubmission, WriterFormValidationError } from "../../../scripts/writer-upload";
+
+export const prerender = false;
+
+// Authenticate before reading any note, including drafts, even without middleware.
+const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+const session = token ? await getActiveSession(token) : null;
+if (!session) return Astro.redirect("/escritor/");
+Astro.response.headers.set("Cache-Control", "no-store");
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/escritor/");
+const note = await getNoteBySlug(slug);
+if (!note) return new Response("Nota no encontrada", { status: 404 });
+
+let error: string | undefined;
+let values = {
+  title: note.data.title,
+  subtitle: note.data.subtitle,
+  body: note.body,
+  tag: note.data.tag ?? "",
+};
+
+if (Astro.request.method === "POST") {
+  try {
+    const submission = await readWriterSubmission(Astro.request, Astro.url.origin);
+    values = submission.values;
+    if (!values.title || !values.subtitle || !values.body) {
+      throw new WriterFormValidationError("Complete el título, el subtítulo y el cuerpo de la nota.");
+    }
+    if (!submission.pendingKey && !note.data.image) {
+      throw new WriterFormValidationError("La imagen es obligatoria. Seleccione una imagen e intente nuevamente.");
+    }
+    const updated = await updateManagedNote(
+      slug, { ...values, tag: values.tag || undefined }, submission.pendingKey || undefined, session.userId,
+    );
+    if (!updated) return new Response("Nota no encontrada", { status: 404 });
+    return Astro.redirect("/escritor/");
+  } catch (cause) {
+    Astro.response.status = cause instanceof WriterFormValidationError ? cause.status
+      : cause instanceof UploadValidationError ? 400 : 500;
+    error = cause instanceof UploadValidationError || cause instanceof WriterFormValidationError
+      ? cause.message
+      : "No se pudo guardar la nota. Sus campos se conservaron; si eligió una imagen, selecciónela e intente nuevamente.";
+  }
+}
+---
+
+<BaseLayout>
+  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-24 md:py-32">
+    <noscript><p>Para editar notas o cargar imágenes, active JavaScript en su navegador y recargue esta página. La imagen actual se conserva si no selecciona un reemplazo.</p></noscript>
+    <WriterForm
+      server:defer
+      mode="update"
+      error={error}
+      values={values}
+      imageUrl={note.data.image}
+      actionUrl={`/escritor/editar/${slug}`}
+    />
+  </main>
+</BaseLayout>

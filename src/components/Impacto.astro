@@ -1,0 +1,27 @@
+---
+import Reveal from "./Reveal.astro";
+import CountUp from "./CountUp.astro";
+
+const impacto = [
+  { value: 2000, prefix: "+", suffix: "", label: "Consultas por operativo" },
+  { value: 2, prefix: "", suffix: "", label: "Operativos por año" },
+  { value: 1500, prefix: "", suffix: " km", label: "De Córdoba a Santa Victoria Este" },
+  { value: 100, prefix: "", suffix: "%", label: "Ad honorem, siempre" },
+];
+---
+
+<section id="impacto" class="px-4 py-20">
+  <div
+    class="mx-auto grid max-w-6xl grid-cols-2 gap-8 rounded-[2.5rem] bg-leaf px-8 py-14 text-leaf-foreground md:grid-cols-4"
+  >
+    {impacto.map((item, i) => (
+      <Reveal delay={i * 120}>
+        <div class="font-display text-4xl font-semibold md:text-5xl">
+          <CountUp value={item.value} prefix={item.prefix} />
+          {item.suffix}
+        </div>
+        <div class="mt-2 text-xs uppercase tracking-widest opacity-75">{item.label}</div>
+      </Reveal>
+    ))}
+  </div>
+</section>

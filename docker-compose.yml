@@ -1,0 +1,48 @@
+# LaWho — Docker Compose (Dokploy-ready)
+#
+# Topología según constitution.md (regla 5):
+#   - PostgreSQL NO forma parte de este compose (servicio externo).
+#     La conexión se inyecta por variables de entorno (Dokploy > Environment).
+#   - Las imágenes subidas persisten en el volumen nombrado `lawho_uploads`.
+#
+# Uso: levantar con Dokploy (proyecto composer) o localmente:
+#   cp .env.example .env   # completar valores reales
+#   docker compose up -d --build
+
+services:
+  lawho:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lawho:latest
+    container_name: lawho
+    restart: unless-stopped
+    environment:
+      # --- PostgreSQL externo (regla 5: por variables de entorno) ---
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      # --- Sesiones ---
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_TTL_MS: ${SESSION_TTL_MS:-86400000}
+      # --- Uploads ---
+      # Ruta absoluta dentro del contenedor (respaldada por volumen).
+      UPLOADS_DIR: /app/uploads
+      # URL pública de los uploads: dominio propio en producción
+      # (p. ej. https://lawho.org.ar/uploads). Dokploy la inyecta.
+      PUBLIC_UPLOADS_URL: ${PUBLIC_UPLOADS_URL:-/uploads}
+      MAX_UPLOAD_SIZE_BYTES: ${MAX_UPLOAD_SIZE_BYTES:-5242880}
+      # --- Servidor Node standalone ---
+      HOST: 0.0.0.0
+      PORT: 4321
+    ports:
+      - "${APP_PORT:-4321}:4321"
+    volumes:
+      - lawho_uploads:/app/uploads
+
+volumes:
+  lawho_uploads:
+    name: lawho_uploads

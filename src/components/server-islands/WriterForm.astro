@@ -1,0 +1,182 @@
+---
+import { SESSION_TTL_MS, MAX_UPLOAD_SIZE_BYTES } from "astro:env/server";
+import { SESSION_COOKIE_NAME } from "../../lib/session";
+import { getActiveSessionAndTouch } from "../../lib/session-repo";
+import { WRITER_LIMITS } from "../../scripts/writer-upload";
+
+interface Props {
+  mode?: "create" | "update";
+  error?: string;
+  values?: {
+    title?: string;
+    subtitle?: string;
+    body?: string;
+    tag?: string;
+  };
+  /** Existing image URL — shown as preview in update mode. */
+  imageUrl?: string;
+  /** Form action URL — required in update mode (server islands cannot read page URL). */
+  actionUrl?: string;
+}
+
+const { mode = "create", error, values, imageUrl, actionUrl } = Astro.props;
+const isUpdate = mode === "update";
+
+// Server islands run in an isolated request context, so the page middleware
+// does not apply here. Re-check the session cookie in-island and hide the form
+// when the visitor is not authenticated. A valid session is also touched so
+// its sliding TTL is renewed by this activity.
+const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+const session = token ? await getActiveSessionAndTouch(token, SESSION_TTL_MS) : null;
+const isAuthenticated = !!session;
+Astro.response.headers.set("Cache-Control", "no-store");
+const maxImageMiB = (MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)).toLocaleString("es", { maximumFractionDigits: 3 });
+
+const inputClass =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+---
+
+{
+  !isAuthenticated ? (
+    <div class="mx-auto max-w-md rounded-[2rem] border border-border bg-card p-8 text-center">
+      <p class="text-sm text-muted-foreground">
+        Es necesario iniciar sesión para escribir.
+      </p>
+      <a
+        href="/escritor/"
+        class="mt-4 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+      >
+        Ir al inicio de sesión
+      </a>
+    </div>
+  ) : (
+    <div class="mx-auto w-full max-w-2xl">
+      <div class="rounded-[2rem] border border-border bg-card p-8">
+        <h1 class="font-display text-2xl font-semibold">
+          {isUpdate ? "Editar nota" : "Nueva nota"}
+        </h1>
+        <p class="mt-2 text-sm text-muted-foreground">
+          {isUpdate
+            ? "Edite los datos de la nota. El cuerpo acepta Markdown."
+            : "Escriba una crónica del terreno. El cuerpo acepta Markdown."}
+        </p>
+
+        {error && (
+          <p
+            class="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
+        <form
+          method="POST"
+          action={isUpdate ? (actionUrl ?? "/escritor/") : "/escritor/nueva"}
+          data-writer-upload
+          data-max-bytes={MAX_UPLOAD_SIZE_BYTES}
+          class="mt-6 grid gap-4"
+        >
+          <input type="hidden" name="pending_key" value="" />
+          <div class="grid gap-1.5">
+            <label for="title" class="text-sm font-medium">
+              Título
+            </label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              required
+              maxlength={WRITER_LIMITS.title}
+              value={values?.title ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="subtitle" class="text-sm font-medium">
+              Subtítulo
+            </label>
+            <input
+              id="subtitle"
+              name="subtitle"
+              type="text"
+              required
+              maxlength={WRITER_LIMITS.subtitle}
+              value={values?.subtitle ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="body" class="text-sm font-medium">
+              Cuerpo (Markdown)
+            </label>
+            <textarea
+              id="body"
+              name="body"
+              required
+              maxlength={WRITER_LIMITS.body}
+              rows={12}
+              class={inputClass}
+            >
+              {values?.body ?? ""}
+            </textarea>
+          </div>
+
+          <div class="grid gap-1.5">
+            <label for="tag" class="text-sm font-medium">
+              Etiqueta (opcional)
+            </label>
+            <input
+              id="tag"
+              name="tag"
+              type="text"
+              maxlength={WRITER_LIMITS.tag}
+              value={values?.tag ?? ""}
+              class={inputClass}
+            />
+          </div>
+
+          {isUpdate && imageUrl ? (
+            <div class="grid gap-1.5">
+              <label class="text-sm font-medium">Imagen actual</label>
+              <img
+                src={imageUrl}
+                alt="Imagen de la nota"
+                class="h-40 w-full rounded-lg object-cover"
+              />
+            </div>
+          ) : null}
+
+          <div class="grid gap-1.5">
+            <label for="image" class="text-sm font-medium">
+              Imagen (JPG/PNG, máx. {maxImageMiB} MiB)
+            </label>
+            <input
+              id="image"
+              type="file"
+              accept="image/jpeg,image/png"
+              required={!isUpdate || !imageUrl}
+              class="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-sun file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sun-foreground"
+            />
+          </div>
+
+          <p data-upload-status role="status" aria-live="polite" class="text-sm text-muted-foreground"></p>
+
+          <button
+            type="submit"
+            class="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            {isUpdate ? "Guardar" : "Publicar"}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+<script>
+  import { installWriterUploads } from "../../scripts/writer-upload";
+  installWriterUploads(document);
+</script>

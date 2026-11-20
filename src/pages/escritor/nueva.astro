@@ -1,0 +1,50 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import WriterForm from "../../components/server-islands/WriterForm.astro";
+import { createManagedNote } from "../../lib/managed-notes";
+import { UploadValidationError } from "../../lib/uploads";
+import { SESSION_COOKIE_NAME } from "../../lib/session";
+import { getActiveSession } from "../../lib/session-repo";
+import { readWriterSubmission, WriterFormValidationError } from "../../scripts/writer-upload";
+
+export const prerender = false;
+
+let error: string | undefined;
+let values = { title: "", subtitle: "", body: "", tag: "" };
+Astro.response.headers.set("Cache-Control", "no-store");
+
+// Islands cannot receive the note POST. Recheck the session independently here.
+if (Astro.request.method === "POST") {
+  const token = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const session = token ? await getActiveSession(token) : null;
+  if (!session) return Astro.redirect("/escritor/");
+
+  try {
+    const submission = await readWriterSubmission(Astro.request, Astro.url.origin);
+    values = submission.values;
+    if (!values.title || !values.subtitle || !values.body) {
+      throw new WriterFormValidationError("Complete el título, el subtítulo y el cuerpo de la nota.");
+    }
+    if (!submission.pendingKey) {
+      throw new WriterFormValidationError("La imagen es obligatoria. Seleccione una imagen e intente nuevamente.");
+    }
+    const note = await createManagedNote(
+      { ...values, tag: values.tag || undefined }, submission.pendingKey, session.userId,
+    );
+    return Astro.redirect(`/operativos-de-salud/${note.slug}/`);
+  } catch (cause) {
+    Astro.response.status = cause instanceof WriterFormValidationError ? cause.status
+      : cause instanceof UploadValidationError ? 400 : 500;
+    error = cause instanceof UploadValidationError || cause instanceof WriterFormValidationError
+      ? cause.message
+      : "No se pudo guardar la nota. Sus campos se conservaron; seleccione la imagen e intente nuevamente.";
+  }
+}
+---
+
+<BaseLayout>
+  <main class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-24 md:py-32">
+    <noscript><p>Para cargar imágenes y publicar notas, active JavaScript en su navegador y recargue esta página. La imagen se carga directamente al almacenamiento seguro.</p></noscript>
+    <WriterForm server:defer error={error} values={values} />
+  </main>
+</BaseLayout>

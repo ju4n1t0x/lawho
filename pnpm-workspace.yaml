@@ -1,0 +1,7 @@
+allowBuilds:
+  argon2: true
+  esbuild: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - '@aws-sdk/client-s3@3.1173.0'
+  - '@aws-sdk/s3-request-presigner@3.1173.0'

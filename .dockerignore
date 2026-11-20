@@ -1,0 +1,27 @@
+# Dependencias y artefactos que no deben entrar al contexto de build
+node_modules/
+dist/
+.astro/
+uploads/
+
+# Secretos y entorno
+.env
+.env.*
+.env.*.local
+
+# VCS y metadatos
+.git/
+.gitignore
+.github/
+
+# Tooling local
+.atl/
+.vscode/
+.idea/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
