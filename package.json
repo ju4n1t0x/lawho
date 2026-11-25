@@ -11,6 +11,7 @@
     "check:deployment": "node tools/check-deployment.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:create-user": "node scripts/create-user.mjs",
+    "db:seed-users": "node scripts/seed-users.mjs",
     "test:db-tools": "vitest run scripts/tests",
     "typecheck": "tsc --noEmit",
     "preview": "astro preview",
