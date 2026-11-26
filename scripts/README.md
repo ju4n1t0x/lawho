@@ -22,7 +22,29 @@ Suggested package-script mapping (maintained by the parent implementation):
 | --- | --- |
 | `db:migrate` | `node scripts/migrate.mjs` |
 | `db:create-user` | `node scripts/create-user.mjs` |
+| `db:seed-users` | `node scripts/seed-users.mjs` |
 | `test:db-tools` | `vitest run scripts/tests` |
+
+## Seeding writers from the environment
+
+`db:seed-users` creates several writers at once from `SEED_USERS` in the local
+gitignored `.env`. It accepts **only pre-computed Argon2id hashes**, never
+plaintext passwords:
+
+```
+SEED_USERS='[{"email":"escritora@lawho.org.ar","password_hash":"$argon2id$v=19$m=65536,p=4,t=3$..."}]'
+```
+
+The value must be single-quoted JSON; without quotes a `#` or `$` in a hash
+breaks `.env` parsing. Generate each hash with
+`node scripts/create-user.mjs --print-hash`, which prompts for the password
+hidden and prints only the hash.
+
+Seeding is idempotent: existing emails are skipped and never reset or
+reactivated, duplicate emails inside the list are rejected, and every seeded
+account gets `role = 'writer'` and `is_active = true`. The tool refuses to run
+when `VERCEL` is set, so it can never execute during a deployment. Remove
+`SEED_USERS` from `.env` after use: a hash is still credential material.
 
 ## Migration guarantees
 

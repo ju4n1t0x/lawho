@@ -57,6 +57,16 @@ export function readHiddenPassword(prompt, input = process.stdin, output = proce
   });
 }
 
+export async function promptNewPassword(input = process.stdin, output = process.stdout) {
+  const password = await readHiddenPassword('Contraseña (entrada oculta): ', input, output);
+  const confirmation = await readHiddenPassword('Confirmá la contraseña: ', input, output);
+  try { validatePasswordLength(password); } catch {
+    throw new ToolError('La contraseña debe tener entre 8 y 128 caracteres.');
+  }
+  if (password !== confirmation) throw new ToolError('Las contraseñas no coinciden.');
+  return { password, confirmation };
+}
+
 export async function promptCredentials(input = process.stdin, output = process.stdout) {
   if (!input.isTTY || !output.isTTY) throw new ToolError('La creación de escritores requiere una terminal interactiva (TTY).');
   const readline = createInterface({ input, output, terminal: true, historySize: 0 });
@@ -73,9 +83,21 @@ export async function promptCredentials(input = process.stdin, output = process.
     readline.off('SIGINT', cancel);
     readline.close();
   }
-  const password = await readHiddenPassword('Contraseña (entrada oculta): ', input, output);
-  const confirmation = await readHiddenPassword('Confirmá la contraseña: ', input, output);
+  const { password, confirmation } = await promptNewPassword(input, output);
   return { email, password, confirmation };
+}
+
+/** Print a fresh Argon2id hash for SEED_USERS without creating an account or storing plaintext. */
+export async function printPasswordHash(input = process.stdin, output = process.stdout) {
+  if (!input.isTTY || !output.isTTY) throw new ToolError('El hash requiere una terminal interactiva (TTY); no uses argumentos ni tuberías.');
+  let { password } = await promptNewPassword(input, output);
+  try {
+    const passwordHash = await hashPassword(password);
+    if (!passwordHash.startsWith('$argon2id$')) throw new ToolError('No se pudo generar un hash Argon2id válido.');
+    return passwordHash;
+  } finally {
+    password = '';
+  }
 }
 
 export async function provisionWriter(client, { email: value, password, confirmation }) {
@@ -99,7 +121,11 @@ export async function provisionWriter(client, { email: value, password, confirma
 }
 
 export async function main(args = process.argv.slice(2)) {
-  if (args.length) throw new ToolError('Uso: node scripts/create-user.mjs (sin argumentos; ingreso interactivo).');
+  if (args.length === 1 && args[0] === '--print-hash') {
+    process.stdout.write(`${await printPasswordHash()}\n`);
+    return;
+  }
+  if (args.length) throw new ToolError('Uso: node scripts/create-user.mjs [--print-hash] (sin argumentos; ingreso interactivo).');
   loadToolEnv();
   const config = maintenanceConfig();
   const credentials = await promptCredentials();
