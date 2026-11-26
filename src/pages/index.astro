@@ -1,9 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import HomeSections from "../components/HomeSections.astro";
+import { organizationJsonLd } from "../lib/organization-seo";
+import { homeSeo } from "../lib/seo";
+
 export const prerender = false;
 ---
 
-<BaseLayout>
+<BaseLayout seo={homeSeo}>
   <HomeSections />
+  <script is:inline type="application/ld+json" set:html={organizationJsonLd}></script>
 </BaseLayout>

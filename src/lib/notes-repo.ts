@@ -73,6 +73,14 @@ export async function listPublishedNotes(): Promise<NoteRecord[]> {
   return rows.map(toRecord);
 }
 
+/** Read only the slugs of published, non-deleted notes for the sitemap. */
+export async function listPublishedNoteSlugs(): Promise<string[]> {
+  const { rows } = await getPool().query<{ slug: string }>(
+    'SELECT slug FROM notes WHERE draft = false AND deleted_at IS NULL ORDER BY date DESC, id DESC',
+  );
+  return rows.map(({ slug }) => slug);
+}
+
 /**
  * Fetch a single note by slug, or null when it does not exist.
  * Excludes soft-deleted notes.

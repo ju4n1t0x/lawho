@@ -4,13 +4,19 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import NoteCard from "../../components/NoteCard.astro";
 import { getPublishedNotes } from "../../lib/notes";
 
+import { listingSeo } from "../../lib/seo";
+
 export const prerender = false;
 
 const result = await getLiveCollection("notes");
 const notes = getPublishedNotes(result.entries ?? []);
+const { seo, status } = listingSeo(result.entries === undefined ? undefined : notes.length);
+if (status === 503) {
+  return new Response(null, { status, headers: { "Cache-Control": "no-store" } });
+}
 ---
 
-<BaseLayout>
+<BaseLayout seo={seo}>
   <section class="mx-auto max-w-6xl px-4 py-24 md:py-32">
     <header class="mb-14 flex flex-col items-baseline justify-between gap-4 md:flex-row">
       <div class="max-w-2xl">

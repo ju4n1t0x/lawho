@@ -1,9 +1,11 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import HomeSections from "../../components/HomeSections.astro";
+import { homeSeo } from "../../lib/seo";
+
 export const prerender = false;
 ---
 
-<BaseLayout>
+<BaseLayout seo={homeSeo}>
   <HomeSections />
 </BaseLayout>
