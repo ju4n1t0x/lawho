@@ -43,6 +43,10 @@ Configure bucket CORS for explicit application origins, for example your product
 - Editing without a new file retains the image. Replacement updates PostgreSQL before removing the old unreferenced managed object. Soft delete retains assets. Cleanup failures after a successful save are warnings, not a failed edit.
 - Sessions remain in PostgreSQL, shared across function instances. Writer responses and image redirects disable caching. Root pages are rendered on demand so the featured-post carousel updates without a redeploy and builds do not query the live database.
 
+## Sitemap
+
+`/robots.txt` points to `https://lawho.com.ar/sitemap.xml` and retains the writer exclusion. The sitemap is generated on request: it always lists the canonical home and includes the operatives listing and detail pages only when notes are published. It omits drafts, soft-deleted notes, English mirrors, writer pages and media, and never lists Preview hosts. A database failure returns a non-cacheable `503` with `Retry-After: 60`, not a partial sitemap.
+
 ## Vercel deployment from Git
 
 Deploy from the Vercel dashboard: **Add New → Project → import the GitHub repository → framework preset Astro → Node 26 → Deploy**. No local Vercel CLI, login, token or prebuilt artifact is involved. `vercel.json` keeps Git deployments enabled, pins `pnpm build` as the build command and installs strictly from the lockfile.
