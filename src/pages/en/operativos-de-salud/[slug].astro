@@ -5,14 +5,20 @@ import NoteTemplate from "../../../components/NoteTemplate.astro";
 import { SESSION_COOKIE_NAME } from "../../../lib/session";
 import { getActiveSession } from "../../../lib/session-repo";
 
+import { noteSeo } from "../../../lib/seo";
+
 export const prerender = false;
 
 const { slug } = Astro.params;
 const result = await getLiveEntry("notes", slug ?? "");
 const entry = result.entry;
 if (!entry) {
-  return new Response(null, { status: 404 });
+  // Astro returns this named error only when the live entry was not found.
+  return result.error?.name === "LiveEntryNotFoundError"
+    ? new Response(null, { status: 404 })
+    : new Response(null, { status: 503, headers: { "Cache-Control": "no-store" } });
 }
+const seo = noteSeo(entry.id, entry.data);
 const { Content } = await render(entry);
 
 const sessionToken = Astro.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -21,7 +27,7 @@ const backHref = isWriter ? "/escritor/" : "/operativos-de-salud/";
 const backLabel = isWriter ? "Back to /escritor" : "Back to operativos";
 ---
 
-<BaseLayout>
+<BaseLayout seo={seo}>
   <div class="mx-auto flex max-w-3xl items-center justify-between px-4 pt-8">
     <a
       href={backHref}

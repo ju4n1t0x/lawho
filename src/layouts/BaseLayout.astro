@@ -1,28 +1,57 @@
 ---
 import "../styles/global.css";
 import NavBar from "../components/NavBar.astro";
+import type { PageSeo } from "../lib/seo";
+
+interface Props {
+  seo?: PageSeo;
+}
+
+const { seo } = Astro.props;
+const metadata = seo && "title" in seo ? seo : undefined;
+const locale = Astro.currentLocale ?? "es";
 ---
 
 <!doctype html>
-<html lang={Astro.currentLocale ?? "es"}>
+<html lang={seo && locale === "es" ? "es-AR" : locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <title>LAWHO | Operativos de salud en el Chaco Salteño</title>
-    <meta
-      name="description"
-      content="Asociación civil de médicos voluntarios que realizan operativos de salud gratuitos en comunidades originarias del Chaco Salteño, Salta. Sumate como voluntario o colaborá."
-    />
-    <meta property="og:title" content="LAWHO Asociación Civil | Médicos voluntarios" />
-    <meta
-      property="og:description"
-      content="Dos operativos al año, seis días de trabajo en terreno y unas 2000 consultas por operativo junto a las comunidades wichí, chorote, chulupí, toba y criollas."
-    />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    {seo?.robots && <meta name="robots" content={seo.robots} />}
+    {metadata ? (
+      <>
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <link rel="canonical" href={metadata.canonical} />
+        <meta property="og:title" content={metadata.title} />
+        <meta property="og:description" content={metadata.description} />
+        <meta property="og:type" content={metadata.type} />
+        <meta property="og:url" content={metadata.canonical} />
+        <meta property="og:image" content={metadata.image} />
+        <meta property="og:locale" content="es_AR" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </>
+    ) : seo ? (
+      <title>LAWHO | Bitácora del terreno</title>
+    ) : (
+      <>
+        <title>LAWHO | Operativos de salud en el Chaco Salteño</title>
+        <meta
+          name="description"
+          content="Asociación civil de médicos voluntarios que realizan operativos de salud gratuitos en comunidades originarias del Chaco Salteño, Salta. Sumate como voluntario o colaborá."
+        />
+        <meta property="og:title" content="LAWHO Asociación Civil | Médicos voluntarios" />
+        <meta
+          property="og:description"
+          content="Dos operativos al año, seis días de trabajo en terreno y unas 2000 consultas por operativo junto a las comunidades wichí, chorote, chulupí, toba y criollas."
+        />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </>
+    )}
   </head>
   <body>
     <NavBar />
